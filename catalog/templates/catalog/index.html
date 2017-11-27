@@ -1,0 +1,29 @@
+{% extends 'layouts/base.html' %}
+
+{% block body %}
+    <h1>Главная страница</h1>
+    <table>
+        <thead>
+        <tr>
+            <td><strong>Название книги</strong></td>
+            <td><strong>Автор</strong></td>
+            <td><strong>Категории</strong></td>
+        </tr>
+        </thead>
+        <tbody>
+        {% for book in books %}
+            <tr>
+                <td>{{ book }}</td>
+                <td>{{ book.author }}</td>
+                <td>
+                    {{ book.categories.all|join:", " }}
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="3">Книги отсутствуют</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

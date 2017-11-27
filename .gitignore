@@ -1,5 +1,7 @@
-env
+/env
 .idea
 *.log
 *.sqlite*
 *.pyc
+/static
+/media
