@@ -1,0 +1,10 @@
+{% extends 'layouts/base.html' %}
+
+{% block body %}
+    <h1>Добавить книгу</h1>
+    <form action="" method="POST" class="add-form">
+        {% csrf_token %}
+        {{ form }}
+        <button>Сохранить</button>
+    </form>
+{% endblock %}

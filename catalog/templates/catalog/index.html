@@ -2,7 +2,7 @@
 
 {% block body %}
     <h1>Главная страница</h1>
-
+    <h3><a href="{% url 'add_book' %}">добавить книгу</a></h3>
     {% if is_paginated %}
         <div class="pagination">
             <span class="page-links">

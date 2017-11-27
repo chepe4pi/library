@@ -10,3 +10,13 @@ td {
 .pagination {
     margin: 20px 0;
 }
+
+.add-form {
+    max-width: 400px;
+}
+
+.add-form input,
+.add-form select {
+    display: block;
+    margin-bottom: 15px;
+}
