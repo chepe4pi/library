@@ -57,7 +57,7 @@ class Book(models.Model):
     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='books', verbose_name='Автор')
     publisher = models.ForeignKey(Publisher, on_delete=models.SET_NULL, related_name='books', blank=True, null=True,
                                   verbose_name='Издательство')
-    categories = models.ManyToManyField(Category, related_name='books')
+    categories = models.ManyToManyField(Category, related_name='books', verbose_name='Категории')
 
     class Meta:
         verbose_name = 'книга'
