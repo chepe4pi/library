@@ -2,6 +2,17 @@
 
 {% block body %}
     <h1>Главная страница</h1>
+
+    {% if is_paginated %}
+        <div class="pagination">
+            <span class="page-links">
+                {% for i in paginator.page_range %}
+                    <a href="{% url 'index' %}?page={{ i }}">{{ i }}</a>
+                {% endfor %}
+            </span>
+        </div>
+    {% endif %}
+
     <table>
         <thead>
         <tr>
@@ -26,4 +37,15 @@
         {% endfor %}
         </tbody>
     </table>
+
+    {% if is_paginated %}
+        <div class="pagination">
+            <span class="page-links">
+                {% for i in paginator.page_range %}
+                    <a href="{% url 'index' %}?page={{ i }}">{{ i }}</a>
+                {% endfor %}
+            </span>
+        </div>
+    {% endif %}
+
 {% endblock %}

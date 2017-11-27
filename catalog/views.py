@@ -9,3 +9,5 @@ class IndexView(ListView):
     model = Book
     template_name = 'catalog/index.html'
     context_object_name = 'books'
+    paginate_by = 10
+    allow_empty = True
