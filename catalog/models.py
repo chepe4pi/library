@@ -11,6 +11,10 @@ class Author(models.Model):
         verbose_name_plural = 'авторы'
 
     def __str__(self):
+        return self.full_name
+
+    @property
+    def full_name(self):
         return "%s %s" % (self.name, self.family_name)
 
 
