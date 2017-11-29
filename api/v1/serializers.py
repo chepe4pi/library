@@ -15,13 +15,11 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class BookSerializer(serializers.ModelSerializer):
-    def get_fields(self):
-        fields_data = super().get_fields()
-        if self.context['request'].GET.get('expand', False):
-            fields_data['author'] = AuthorSerializer(read_only=True)
-            fields_data['categories'] = CategorySerializer(many=True, read_only=True)
-        return fields_data
-
     class Meta:
         model = Book
         fields = ('id', 'title', 'title_original', 'year_published', 'description', 'author', 'categories')
+
+
+class ExpandedBookSerializer(BookSerializer):
+    author = AuthorSerializer(read_only=True)
+    categories = CategorySerializer(many=True, read_only=True)

@@ -1,6 +1,6 @@
 from django.conf.urls import url
 from rest_framework import routers
-from .viewsets import AuthorViewSet, BookViewSet, CategoryViewSet
+from .views import AuthorViewSet, BookViewSet, CategoryViewSet
 from django.conf.urls import include
 
 router = routers.SimpleRouter()
