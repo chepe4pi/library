@@ -3,7 +3,7 @@ from .serializers import AuthorSerializer, BookSerializer, ExpandedBookSerialize
 from catalog.models import Author, Book, Category
 
 
-class ExpandableViewSetMixin(viewsets.ModelViewSet):
+class ExpandableViewSetMixin(viewsets.GenericViewSet):
     serializer_expanded_class = None
 
     def should_expand(self):
