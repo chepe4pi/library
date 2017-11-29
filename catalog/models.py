@@ -70,6 +70,12 @@ class Book(models.Model):
         verbose_name = 'книга'
         verbose_name_plural = 'книги'
 
+    def in_bookmarks(self, user):
+        try:
+            return self.bookmarks.get(user=user)
+        except Bookmark.DoesNotExist:
+            return False
+
     def __str__(self):
         return self.title
 
@@ -86,4 +92,4 @@ class Bookmark(models.Model):
     def __str__(self):
         if self.memo:
             return "%s (%s)" % (self.book, self.memo)
-        return self.book
+        return str(self.book)
