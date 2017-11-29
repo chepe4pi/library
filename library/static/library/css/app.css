@@ -20,3 +20,7 @@ td {
     display: block;
     margin-bottom: 15px;
 }
+
+.disabled {
+    pointer-events: none;
+}

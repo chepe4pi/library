@@ -18,5 +18,6 @@ from . import views
 
 urlpatterns = [
     url(r'^$', views.IndexView.as_view(), name='index'),
+    url(r'^list_book_ajax', views.ListBookAjaxView.as_view(), name='list_book_ajax'),
     url(r'^add_book$', views.AddBookView.as_view(), name='add_book'),
 ]

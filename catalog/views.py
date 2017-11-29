@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.views.generic.list import ListView
-from django.views.generic import CreateView
+from django.views.generic import CreateView, TemplateView
 from .models import Book
 from django.urls import reverse
 
@@ -22,3 +22,7 @@ class AddBookView(CreateView):
 
     def get_success_url(self):
         return reverse('index')
+
+
+class ListBookAjaxView(TemplateView):
+    template_name = 'catalog/book_list_ajax.html'
