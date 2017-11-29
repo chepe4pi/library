@@ -1,7 +1,7 @@
 (function () {
 
     var currentOffset = 0,
-        defaultLimit = 10,
+        defaultLimit = 1,
         $next_page_links = $('.js-next-page-link'),
         $prev_page_links = $('.js-prev-page-link');
 
@@ -20,6 +20,7 @@
             },
             success: function (json) {
                 renderBookList(json);
+                currentOffset = offset;
                 callback();
             },
             error: function (data) {
