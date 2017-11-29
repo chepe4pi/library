@@ -1,4 +1,7 @@
 from django.db import models
+from django.contrib.auth import get_user_model
+
+UserModel = get_user_model()
 
 
 class Author(models.Model):
@@ -69,3 +72,18 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Bookmark(models.Model):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='bookmarks', verbose_name='Книга')
+    user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='bookmarks', verbose_name='Пользователь')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    memo = models.CharField(max_length=255, blank=True, null=True, verbose_name='Памятка')
+
+    class Meta:
+        unique_together = ('book', 'user')
+
+    def __str__(self):
+        if self.memo:
+            return "%s (%s)" % (self.book, self.memo)
+        return self.book
