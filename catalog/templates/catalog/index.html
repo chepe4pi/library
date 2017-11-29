@@ -1,17 +1,15 @@
 {% extends 'layouts/base.html' %}
+{% load static %}
 
 {% block body %}
     <h1>Главная страница</h1>
-    <h3><a href="{% url 'add_book' %}">добавить книгу</a></h3>
-    {% if is_paginated %}
-        <div class="pagination">
-            <span class="page-links">
-                {% for i in paginator.page_range %}
-                    <a href="{% url 'index' %}?page={{ i }}">{{ i }}</a>
-                {% endfor %}
+
+    <div class="pagination">
+            <span class="page-links js-page-links">
+                <a class="js-prev-page-link" href="#">предыдущая</a>
+                <a class="js-next-page-link" href="#">следующая</a>
             </span>
-        </div>
-    {% endif %}
+    </div>
 
     <table>
         <thead>
@@ -21,31 +19,18 @@
             <td><strong>Категории</strong></td>
         </tr>
         </thead>
-        <tbody>
-        {% for book in books %}
-            <tr>
-                <td>{{ book }}</td>
-                <td>{{ book.author }}</td>
-                <td>
-                    {{ book.categories.all|join:", " }}
-                </td>
-            </tr>
-        {% empty %}
-            <tr>
-                <td colspan="3">Книги отсутствуют</td>
-            </tr>
-        {% endfor %}
+        <tbody class="js-book-list">
         </tbody>
     </table>
 
-    {% if is_paginated %}
-        <div class="pagination">
-            <span class="page-links">
-                {% for i in paginator.page_range %}
-                    <a href="{% url 'index' %}?page={{ i }}">{{ i }}</a>
-                {% endfor %}
+    <div class="pagination">
+            <span class="page-links js-page-links">
+                <a class="js-prev-page-link" href="#">предыдущая</a>
+                <a class="js-next-page-link" href="#">следующая</a>
             </span>
-        </div>
-    {% endif %}
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="{% static 'catalog/js/ajax.js' %}"></script>
 
 {% endblock %}

@@ -7,12 +7,8 @@ from django.urls import reverse
 
 # Create your views here.
 
-class IndexView(ListView):
-    model = Book
+class IndexView(TemplateView):
     template_name = 'catalog/index.html'
-    context_object_name = 'books'
-    paginate_by = 10
-    allow_empty = True
 
 
 class AddBookView(CreateView):
@@ -22,7 +18,3 @@ class AddBookView(CreateView):
 
     def get_success_url(self):
         return reverse('index')
-
-
-class ListBookAjaxView(TemplateView):
-    template_name = 'catalog/book_list_ajax.html'
