@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from catalog.models import Book, Author, Category
+from rest_framework.validators import UniqueTogetherValidator
+from catalog.models import Book, Author, Category, Bookmark
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -23,3 +24,18 @@ class BookSerializer(serializers.ModelSerializer):
 class ExpandedBookSerializer(BookSerializer):
     author = AuthorSerializer(read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
+
+
+class BookmarkSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Bookmark
+        fields = ('id', 'book', 'user', 'memo', 'created_at')
+        validators = [
+            UniqueTogetherValidator(queryset=Bookmark.objects.all(), fields=('book', 'user'))
+        ]
+
+
+class ExpandedBookmarkSerializer(BookmarkSerializer):
+    book = ExpandedBookSerializer(read_only=True)

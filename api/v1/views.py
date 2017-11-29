@@ -1,6 +1,10 @@
-from rest_framework import viewsets
-from .serializers import AuthorSerializer, BookSerializer, ExpandedBookSerializer, CategorySerializer
-from catalog.models import Author, Book, Category
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework.decorators import detail_route, permission_classes
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from .serializers import AuthorSerializer, BookSerializer, ExpandedBookSerializer, CategorySerializer, \
+    BookmarkSerializer, ExpandedBookmarkSerializer
+from catalog.models import Author, Book, Category, Bookmark
 
 
 class ExpandableViewSetMixin(viewsets.GenericViewSet):
@@ -30,3 +34,16 @@ class BookViewSet(ExpandableViewSetMixin, viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
+
+class BookmarkViewSet(ExpandableViewSetMixin, viewsets.ModelViewSet):
+    serializer_class = BookmarkSerializer
+    serializer_expanded_class = ExpandedBookmarkSerializer
+    queryset = Bookmark.objects.all()
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
