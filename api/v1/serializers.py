@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from catalog.models import Book, Author, Category, Bookmark
+from catalog.logic import in_bookmarks
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -16,9 +17,16 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class BookSerializer(serializers.ModelSerializer):
+    in_bookmarks = serializers.SerializerMethodField(method_name='get_in_bookmarks')
+
     class Meta:
         model = Book
-        fields = ('id', 'title', 'title_original', 'year_published', 'description', 'author', 'categories')
+        fields = (
+            'id', 'title', 'title_original', 'year_published', 'description', 'author', 'categories', 'in_bookmarks'
+        )
+
+    def get_in_bookmarks(self, book):
+        return in_bookmarks(book, self.context['request'].user)
 
 
 class ExpandedBookSerializer(BookSerializer):
