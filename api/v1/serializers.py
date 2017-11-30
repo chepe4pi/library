@@ -41,5 +41,5 @@ class ExpandedBookmarkSerializer(BookmarkSerializer):
     book = ExpandedBookSerializer(read_only=True)
 
 
-class StaffBookmarkSerializer(BookmarkSerializer):
+class StaffBookmarkSerializer(ExpandedBookmarkSerializer):
     user = serializers.PrimaryKeyRelatedField

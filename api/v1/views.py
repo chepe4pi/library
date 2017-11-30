@@ -9,13 +9,9 @@ from .filters import UserAccessRestrictionFilterBackend
 class ExpandableViewSetMixin(viewsets.GenericViewSet):
     serializer_expanded_class = None
 
-    def should_expand(self):
-        return self.request.GET.get('expand', False)
-
     def get_serializer_class(self):
-        if self.should_expand():
+        if self.request.GET.get('expand', False):
             return self.serializer_expanded_class
-
         return super().get_serializer_class()
 
 
@@ -23,16 +19,9 @@ class StaffViewSetMixin(viewsets.GenericViewSet):
     staff_serializer_class = None
 
     def get_serializer_class(self):
-        if self.is_staff(self.get_user()):
+        if self.request.user.is_staff:
             return self.staff_serializer_class
-
         return super().get_serializer_class()
-
-    def get_user(self):
-        return self.request.user
-
-    def is_staff(self, user):
-        return user.is_staff
 
 
 class AuthorViewSet(viewsets.ModelViewSet):
