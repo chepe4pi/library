@@ -39,3 +39,7 @@ class BookmarkSerializer(serializers.ModelSerializer):
 
 class ExpandedBookmarkSerializer(BookmarkSerializer):
     book = ExpandedBookSerializer(read_only=True)
+
+
+class StaffBookmarkSerializer(BookmarkSerializer):
+    user = serializers.PrimaryKeyRelatedField

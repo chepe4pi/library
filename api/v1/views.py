@@ -1,10 +1,9 @@
-from rest_framework import viewsets, status
-from rest_framework.response import Response
-from rest_framework.decorators import detail_route, permission_classes
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 from .serializers import AuthorSerializer, BookSerializer, ExpandedBookSerializer, CategorySerializer, \
-    BookmarkSerializer, ExpandedBookmarkSerializer
+    BookmarkSerializer, ExpandedBookmarkSerializer, StaffBookmarkSerializer
 from catalog.models import Author, Book, Category, Bookmark
+from .filters import UserAccessRestrictionFilterBackend
 
 
 class ExpandableViewSetMixin(viewsets.GenericViewSet):
@@ -18,6 +17,22 @@ class ExpandableViewSetMixin(viewsets.GenericViewSet):
             return self.serializer_expanded_class
 
         return super().get_serializer_class()
+
+
+class StaffViewSetMixin(viewsets.GenericViewSet):
+    staff_serializer_class = None
+
+    def get_serializer_class(self):
+        if self.is_staff(self.get_user()):
+            return self.staff_serializer_class
+
+        return super().get_serializer_class()
+
+    def get_user(self):
+        return self.request.user
+
+    def is_staff(self, user):
+        return user.is_staff
 
 
 class AuthorViewSet(viewsets.ModelViewSet):
@@ -36,14 +51,10 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
 
 
-class BookmarkViewSet(ExpandableViewSetMixin, viewsets.ModelViewSet):
+class BookmarkViewSet(StaffViewSetMixin, ExpandableViewSetMixin, viewsets.ModelViewSet):
     serializer_class = BookmarkSerializer
     serializer_expanded_class = ExpandedBookmarkSerializer
+    staff_serializer_class = StaffBookmarkSerializer
     queryset = Bookmark.objects.all()
     permission_classes = (IsAuthenticated,)
-
-    def get_queryset(self):
-        return self.queryset.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    filter_backends = (UserAccessRestrictionFilterBackend,)
