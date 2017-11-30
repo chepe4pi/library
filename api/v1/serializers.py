@@ -17,7 +17,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class BookSerializer(serializers.ModelSerializer):
-    in_bookmarks = serializers.SerializerMethodField(method_name='get_in_bookmarks')
+    in_bookmarks = serializers.SerializerMethodField()
 
     class Meta:
         model = Book
