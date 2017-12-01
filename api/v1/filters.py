@@ -1,15 +1,16 @@
-from rest_framework.filters import BaseFilterBackend
-from django.db.models import QuerySet, Model
+from django_filters.rest_framework import FilterSet
+from catalog.models import Bookmark
 
 
-class UserAccessRestrictionFilterBackend(BaseFilterBackend):
-    user_field_name = 'user'
+class BookmarkFilter(FilterSet):
+    @property
+    def qs(self):
+        qs = super().qs
+        user = getattr(self.request, 'user', None)
+        if user and not user.is_staff:
+            qs = qs.filter(user=user.pk)
+        return qs
 
-    def filter_queryset(self, request, queryset, view):
-        user = request.user
-        if not user.is_staff:
-            return queryset.filter(user=user)
-        # admin-only features
-        if 'user' in request.GET:
-            queryset = queryset.filter(user=request.GET['user'])
-        return queryset
+    class Meta:
+        model = Bookmark
+        fields = ('book', 'user')
