@@ -9,4 +9,7 @@ class UserAccessRestrictionFilterBackend(BaseFilterBackend):
         user = request.user
         if not user.is_staff:
             return queryset.filter(user=user)
+        # admin-only features
+        if 'user' in request.GET:
+            queryset = queryset.filter(user=request.GET['user'])
         return queryset

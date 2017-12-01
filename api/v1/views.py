@@ -30,9 +30,16 @@ class AuthorViewSet(viewsets.ModelViewSet):
 
 
 class BookViewSet(ExpandableViewSetMixin, viewsets.ModelViewSet):
-    queryset = Book.objects.all()
+    queryset = Book.objects.all().prefetch_related('categories')
     serializer_class = BookSerializer
     serializer_expanded_class = ExpandedBookSerializer
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx['bookmarked_books'] = []
+        if self.request.user.pk:
+            ctx['bookmarked_books'] = Bookmark.objects.filter(user=self.request.user).values_list('book__id', flat=True)
+        return ctx
 
 
 class CategoryViewSet(viewsets.ModelViewSet):

@@ -26,7 +26,7 @@ class BookSerializer(serializers.ModelSerializer):
         )
 
     def get_in_bookmarks(self, book):
-        return in_bookmarks(book, self.context['request'].user)
+        return book.id in self.context['bookmarked_books']
 
 
 class ExpandedBookSerializer(BookSerializer):
