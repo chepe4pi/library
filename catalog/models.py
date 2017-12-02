@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from .logic import rating_human
 
 UserModel = get_user_model()
 
@@ -116,7 +115,7 @@ class AbstractRatingModel(models.Model):
         abstract = True
 
     def __str__(self):
-        return rating_human(self)
+        return self.get_rating_display()
 
 
 class WishlistedBook(AbstractUserBookMark):
@@ -134,4 +133,4 @@ class Bookmark(AbstractUserBookMark):
 
 class BookRating(AbstractUserBookMark, AbstractRatingModel):
     def __str__(self):
-        return rating_human(self)
+        return self.get_rating_display()
