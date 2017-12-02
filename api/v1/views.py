@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from .serializers import AuthorSerializer, BookSerializer, ExpandedBookSerializer, CategorySerializer, \
     BookmarkSerializer, ExpandedBookmarkSerializer, StaffBookmarkSerializer
 from catalog.models import Author, Book, Category, Bookmark
-from .filters import BookmarkFilter
+from .filter_backends import BookmarkFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from .mixins import ExpandableViewSetMixin, PrefetchBookmarksMixin, StaffViewSetMixin
 
