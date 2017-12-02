@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
-from catalog.models import Book, Author, Category, Bookmark
+from catalog.models import Book, Author, Category, Bookmark, BookRating, WishlistedBook
 from catalog.logic import in_bookmarks
 
 
@@ -18,17 +18,28 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class BookSerializer(serializers.ModelSerializer):
     in_bookmarks = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Book
         fields = (
-            'id', 'title', 'title_original', 'year_published', 'description', 'author', 'categories', 'in_bookmarks'
+            'id', 'title', 'title_original', 'year_published', 'description', 'author', 'categories', 'in_bookmarks',
+            'rating'
         )
 
     def get_in_bookmarks(self, book):
         if 'bookmarked_books' in self.context:
             return book in self.context['bookmarked_books']
         return in_bookmarks(book, self.context['request'].user)
+
+    def get_rating(self, book):
+        if 'rated_books' in self.context:
+            for book_id, rating in self.context['rated_books']:
+                if book_id == book.id:
+                    return rating
+            return None
+        book_rating = book.bookratings.filter(user=self.context['request'].user)
+        return book_rating.rating if book_rating else None
 
 
 class ExpandedBookSerializer(BookSerializer):
@@ -52,4 +63,20 @@ class ExpandedBookmarkSerializer(BookmarkSerializer):
 
 
 class StaffBookmarkSerializer(ExpandedBookmarkSerializer):
+    user = serializers.PrimaryKeyRelatedField
+
+
+class BookRatingSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = BookRating
+        fields = ('id', 'book', 'user', 'rating')
+
+
+class ExpandedBookRatingSerializer(BookRatingSerializer):
+    book = ExpandedBookSerializer(read_only=True)
+
+
+class StaffBookRatingSerializer(BookRatingSerializer):
     user = serializers.PrimaryKeyRelatedField
