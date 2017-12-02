@@ -29,7 +29,7 @@ class BookSerializer(serializers.ModelSerializer):
 
     def get_in_bookmarks(self, book):
         if 'bookmarked_books' in self.context:
-            return book in self.context['bookmarked_books']
+            return book.id in self.context['bookmarked_books']
         return in_bookmarks(book, self.context['request'].user)
 
     def get_rating(self, book):
