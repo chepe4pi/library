@@ -15,7 +15,7 @@ class BookRatingFilter(FilterSet):
         fields = ('book', 'user', 'rating')
 
 
-class RestrictBookmarkAccess(BaseFilterBackend):
+class StaffAccessFilter(BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         if not request.user.is_staff:
             return queryset.filter(user=request.user)

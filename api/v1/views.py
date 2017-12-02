@@ -4,7 +4,7 @@ from .serializers import AuthorSerializer, BookSerializer, ExpandedBookSerialize
     BookmarkSerializer, ExpandedBookmarkSerializer, StaffBookmarkSerializer, BookRatingSerializer, \
     ExpandedBookRatingSerializer, StaffBookRatingSerializer
 from catalog.models import Author, Book, Category, Bookmark, BookRating
-from .filter_backends import BookmarkFilter, RestrictBookmarkAccess, BookRatingFilter
+from .filter_backends import BookmarkFilter, StaffAccessFilter, BookRatingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from .mixins.views import ExpandableViewSetMixin, PrefetchUserData, StaffViewSetMixin
 
@@ -30,7 +30,7 @@ class BookmarkViewSet(StaffViewSetMixin, ExpandableViewSetMixin, PrefetchUserDat
     serializer_expanded_class = ExpandedBookmarkSerializer
     staff_serializer_class = StaffBookmarkSerializer
     permission_classes = (IsAuthenticated,)
-    filter_backends = (DjangoFilterBackend, RestrictBookmarkAccess)
+    filter_backends = (DjangoFilterBackend, StaffAccessFilter)
     filter_class = BookmarkFilter
 
     queryset = Bookmark.objects.all().select_related(
@@ -45,7 +45,7 @@ class BookRatingViewSet(StaffViewSetMixin, ExpandableViewSetMixin, PrefetchUserD
     serializer_expanded_class = ExpandedBookRatingSerializer
     staff_serializer_class = StaffBookRatingSerializer
     permission_classes = (IsAuthenticated,)
-    filter_backends = (DjangoFilterBackend, RestrictBookmarkAccess)
+    filter_backends = (DjangoFilterBackend, StaffAccessFilter)
     filter_class = BookRatingFilter
 
     queryset = BookRating.objects.all()
