@@ -3,9 +3,9 @@ from rest_framework.permissions import IsAuthenticated
 from .serializers import AuthorSerializer, BookSerializer, ExpandedBookSerializer, CategorySerializer, \
     BookmarkSerializer, ExpandedBookmarkSerializer, StaffBookmarkSerializer
 from catalog.models import Author, Book, Category, Bookmark
-from .filter_backends import BookmarkFilter
+from .filter_backends import BookmarkFilter, RestrictBookmarkAccess
 from django_filters.rest_framework import DjangoFilterBackend
-from .mixins import ExpandableViewSetMixin, PrefetchBookmarksMixin, StaffViewSetMixin
+from .mixins.views import ExpandableViewSetMixin, PrefetchBookmarksMixin, StaffViewSetMixin
 
 
 class AuthorViewSet(viewsets.ModelViewSet):
@@ -29,7 +29,7 @@ class BookmarkViewSet(StaffViewSetMixin, ExpandableViewSetMixin, PrefetchBookmar
     serializer_expanded_class = ExpandedBookmarkSerializer
     staff_serializer_class = StaffBookmarkSerializer
     permission_classes = (IsAuthenticated,)
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend, RestrictBookmarkAccess)
     filter_class = BookmarkFilter
 
     queryset = Bookmark.objects.all().select_related(
