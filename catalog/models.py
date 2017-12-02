@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from .logic import rating_human
 
 UserModel = get_user_model()
 
@@ -75,7 +76,8 @@ class Book(models.Model):
 
 
 class AbstractUserMark(models.Model):
-    user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='%(class)ss', verbose_name='Пользователь')
+    user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='%(class)ss',
+                             verbose_name='Пользователь')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
 
     class Meta:
@@ -108,17 +110,13 @@ class AbstractRatingModel(models.Model):
         (RATING_VERY_GOOD, 'Отлично'),
     )
 
-    @property
-    def rating_human(self):
-        for rating, rating_human in self.RATING_CHOICES:
-            if rating_human == self.rating:
-                return rating_human
-        return None
-
     rating = models.PositiveSmallIntegerField(choices=RATING_CHOICES, verbose_name='Оценка')
 
     class Meta:
         abstract = True
+
+    def __str__(self):
+        return rating_human(self)
 
 
 class WishlistedBook(AbstractUserBookMark):
@@ -136,4 +134,4 @@ class Bookmark(AbstractUserBookMark):
 
 class BookRating(AbstractUserBookMark, AbstractRatingModel):
     def __str__(self):
-        return "%s (%s)" % (self.rating_human, self.book)
+        return rating_human(self)
