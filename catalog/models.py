@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.forms import ValidationError
 
 UserModel = get_user_model()
 
@@ -74,32 +75,22 @@ class Book(models.Model):
         return self.title
 
 
-class AbstractUserMark(models.Model):
-    user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='%(class)ss',
-                             verbose_name='Пользователь')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+class UserBookRelation(models.Model):
+    TYPE_RATING = 0
+    TYPE_WISHLISTED = 1
+    TYPE_BOOKMARK = 2
 
-    class Meta:
-        abstract = True
+    TYPE_CHOICES = (
+        (TYPE_RATING, 'Оценка'),
+        (TYPE_WISHLISTED, 'Внесение в избранные'),
+        (TYPE_BOOKMARK, 'Закладка'),
+    )
 
-
-class AbstractUserBookMark(AbstractUserMark):
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='%(class)ss', verbose_name='Книга')
-
-    class Meta:
-        abstract = True
-        unique_together = ('book', 'user')
-
-    def __str__(self):
-        return str(self.book)
-
-
-class AbstractRatingModel(models.Model):
-    RATING_VERY_BAD = 0
-    RATING_BAD = 1
-    RATING_OK = 2
-    RATING_GOOD = 3
-    RATING_VERY_GOOD = 4
+    RATING_VERY_BAD = "R1"
+    RATING_BAD = "R2"
+    RATING_OK = "R3"
+    RATING_GOOD = "R4"
+    RATING_VERY_GOOD = "R5"
 
     RATING_CHOICES = (
         (RATING_VERY_BAD, 'Ужасно'),
@@ -109,28 +100,20 @@ class AbstractRatingModel(models.Model):
         (RATING_VERY_GOOD, 'Отлично'),
     )
 
-    rating = models.PositiveSmallIntegerField(choices=RATING_CHOICES, verbose_name='Оценка')
+    user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='%(class)ss',
+                             verbose_name='Пользователь')
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='%(class)ss', verbose_name='Книга')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    type = models.PositiveSmallIntegerField(verbose_name='Тип отношения', choices=TYPE_CHOICES)
+    value = models.CharField(max_length=255, blank=True, null=True, verbose_name='Значение')
+
+    def save(self, *args, **kwargs):
+        if self.type == self.TYPE_WISHLISTED:
+            self.value = None
+        return super().save(*args, **kwargs)
 
     class Meta:
-        abstract = True
+        unique_together = ('book', 'user', 'type')
 
     def __str__(self):
-        return self.get_rating_display()
-
-
-class WishlistedBook(AbstractUserBookMark):
-    pass
-
-
-class Bookmark(AbstractUserBookMark):
-    memo = models.CharField(max_length=255, blank=True, null=True, verbose_name='Памятка')
-
-    def __str__(self):
-        if self.memo:
-            return "%s (%s)" % (self.book, self.memo)
-        return super().__str__()
-
-
-class BookRating(AbstractUserBookMark, AbstractRatingModel):
-    def __str__(self):
-        return self.get_rating_display()
+        return str(self.book)
