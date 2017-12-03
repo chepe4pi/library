@@ -19,30 +19,40 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class BookSerializer(serializers.ModelSerializer):
     in_bookmarks = serializers.SerializerMethodField()
+    in_wishlist = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Book
         fields = (
             'id', 'title', 'title_original', 'year_published', 'description', 'author', 'categories', 'in_bookmarks',
-            'rating'
+            'rating', 'in_wishlist'
         )
 
     def get_in_bookmarks(self, book):
-        # TODO: rework!
-        if 'bookmarked_books' in self.context:
-            return book.id in self.context['bookmarked_books']
-        return in_bookmarks(book, self.context['request'].user)
+        if 'user_book_relations' not in self.context:
+            raise NotImplemented('UserBookRelation model data not prefetched')
+        for book_id, rel_type, rel_value in self.context['user_book_relations']:
+            if book_id == book.id and rel_type == UserBookRelation.TYPE_BOOKMARK:
+                return True
+        return False
 
     def get_rating(self, book):
-        # TODO: rework!
-        if 'rated_books' in self.context:
-            for book_id, rating in self.context['rated_books']:
-                if book_id == book.id:
-                    return rating
-            return None
-        book_rating = book.bookratings.filter(user=self.context['request'].user)
-        return book_rating.rating if book_rating else None
+        if 'user_book_relations' not in self.context:
+            raise NotImplemented('UserBookRelation model data not prefetched')
+        for book_id, rel_type, rel_value in self.context['user_book_relations']:
+            if book_id == book.id and rel_type == UserBookRelation.TYPE_RATING:
+                rating_dict = {k: v for k, v in UserBookRelation.RATING_CHOICES}
+                return rating_dict[rel_value]
+        return None
+
+    def get_in_wishlist(self, book):
+        if 'user_book_relations' not in self.context:
+            raise NotImplemented('UserBookRelation model data not prefetched')
+        for book_id, rel_type, rel_value in self.context['user_book_relations']:
+            if book_id == book.id and rel_type == UserBookRelation.TYPE_WISHLISTED:
+                return True
+        return False
 
 
 class ExpandedBookSerializer(BookSerializer):

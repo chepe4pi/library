@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+from catalog.models import UserBookRelation
 
 
 class ExpandableViewSetMixin(viewsets.GenericViewSet):
@@ -22,7 +23,12 @@ class StaffViewSetMixin(viewsets.GenericViewSet):
 class PrefetchUserData(viewsets.GenericViewSet):
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update({})
+        context.update({
+            'user_book_relations': []
+        })
         if self.request.user.pk:
-            context.update({})
+            context.update({
+                'user_book_relations': UserBookRelation.objects.filter(user=self.request.user)
+                    .values_list('book__id', 'type', 'value')
+            })
         return context
