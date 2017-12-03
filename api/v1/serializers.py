@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
-from catalog.models import Book, Author, Category, Bookmark, BookRating, WishlistedBook
+from catalog.models import Book, Author, Category, UserBookRelation
 from catalog.logic import in_bookmarks
+from rest_framework.exceptions import ValidationError
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -28,11 +29,13 @@ class BookSerializer(serializers.ModelSerializer):
         )
 
     def get_in_bookmarks(self, book):
+        # TODO: rework!
         if 'bookmarked_books' in self.context:
             return book.id in self.context['bookmarked_books']
         return in_bookmarks(book, self.context['request'].user)
 
     def get_rating(self, book):
+        # TODO: rework!
         if 'rated_books' in self.context:
             for book_id, rating in self.context['rated_books']:
                 if book_id == book.id:
@@ -47,36 +50,25 @@ class ExpandedBookSerializer(BookSerializer):
     categories = CategorySerializer(many=True, read_only=True)
 
 
-class BookmarkSerializer(serializers.ModelSerializer):
+class UserBookRelationSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
-    class Meta:
-        model = Bookmark
-        fields = ('id', 'book', 'user', 'memo', 'created_at')
-        validators = [
-            UniqueTogetherValidator(queryset=Bookmark.objects.all(), fields=('book', 'user'))
-        ]
-
-
-class ExpandedBookmarkSerializer(BookmarkSerializer):
-    book = ExpandedBookSerializer(read_only=True)
-
-
-class StaffBookmarkSerializer(ExpandedBookmarkSerializer):
-    user = serializers.PrimaryKeyRelatedField
-
-
-class BookRatingSerializer(serializers.ModelSerializer):
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        if attrs['type'] == UserBookRelation.TYPE_RATING:
+            rating_values = (c[0] for c in UserBookRelation.RATING_CHOICES)
+            if attrs['value'] not in rating_values:
+                raise ValidationError({'value': 'Incorrect rating value'})
+        return attrs
 
     class Meta:
-        model = BookRating
-        fields = ('id', 'book', 'user', 'rating')
+        model = UserBookRelation
+        fields = ('user', 'book', 'type', 'value', 'created_at')
 
 
-class ExpandedBookRatingSerializer(BookRatingSerializer):
-    book = ExpandedBookSerializer(read_only=True)
+class ExpandedUserBookRelationSerializer(UserBookRelationSerializer):
+    book = BookSerializer(read_only=True)
 
 
-class StaffBookRatingSerializer(BookRatingSerializer):
+class StaffBookRelationSerializer(UserBookRelationSerializer):
     user = serializers.PrimaryKeyRelatedField
