@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.forms import ValidationError
 
 UserModel = get_user_model()
 
@@ -76,21 +75,11 @@ class Book(models.Model):
 
 
 class UserBookRelation(models.Model):
-    TYPE_RATING = 0
-    TYPE_WISHLISTED = 1
-    TYPE_BOOKMARK = 2
-
-    TYPE_CHOICES = (
-        (TYPE_RATING, 'Оценка'),
-        (TYPE_WISHLISTED, 'Внесение в избранные'),
-        (TYPE_BOOKMARK, 'Закладка'),
-    )
-
-    RATING_VERY_BAD = "R1"
-    RATING_BAD = "R2"
-    RATING_OK = "R3"
-    RATING_GOOD = "R4"
-    RATING_VERY_GOOD = "R5"
+    RATING_VERY_BAD = 1
+    RATING_BAD = 2
+    RATING_OK = 3
+    RATING_GOOD = 4
+    RATING_VERY_GOOD = 5
 
     RATING_CHOICES = (
         (RATING_VERY_BAD, 'Ужасно'),
@@ -103,17 +92,12 @@ class UserBookRelation(models.Model):
     user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='%(class)ss',
                              verbose_name='Пользователь')
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='%(class)ss', verbose_name='Книга')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
-    type = models.PositiveSmallIntegerField(verbose_name='Тип отношения', choices=TYPE_CHOICES)
-    value = models.CharField(max_length=255, blank=True, null=True, verbose_name='Значение')
-
-    def save(self, *args, **kwargs):
-        if self.type == self.TYPE_WISHLISTED:
-            self.value = None
-        return super().save(*args, **kwargs)
+    in_bookmarks = models.BooleanField(default=False, verbose_name='В закладках')
+    in_wishlist = models.BooleanField(default=False, verbose_name='В списке желаний')
+    rating = models.PositiveSmallIntegerField(blank=True, null=True, choices=RATING_CHOICES, verbose_name='Рейтинг')
 
     class Meta:
-        unique_together = ('book', 'user', 'type')
+        unique_together = ('book', 'user')
 
     def __str__(self):
         return str(self.book)
