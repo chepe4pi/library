@@ -29,30 +29,19 @@ class BookSerializer(serializers.ModelSerializer):
             'rating', 'in_wishlist'
         )
 
-    def get_in_bookmarks(self, book):
+    def get_relation(self, book):
         if 'user_book_relations' not in self.context:
             raise NotImplemented('UserBookRelation model data not prefetched')
-        for book_id, rel_type, rel_value in self.context['user_book_relations']:
-            if book_id == book.id and rel_type == UserBookRelation.TYPE_BOOKMARK:
-                return True
-        return False
+        return self.context['user_book_relations'].filter(book__id=book.id).first()
+
+    def get_in_bookmarks(self, book):
+        return getattr(self.get_relation(book), 'in_bookmarks', False)
 
     def get_rating(self, book):
-        if 'user_book_relations' not in self.context:
-            raise NotImplemented('UserBookRelation model data not prefetched')
-        for book_id, rel_type, rel_value in self.context['user_book_relations']:
-            if book_id == book.id and rel_type == UserBookRelation.TYPE_RATING:
-                rating_dict = {k: v for k, v in UserBookRelation.RATING_CHOICES}
-                return rating_dict[rel_value]
-        return None
+        return getattr(self.get_relation(book), 'in_bookmarks', None)
 
     def get_in_wishlist(self, book):
-        if 'user_book_relations' not in self.context:
-            raise NotImplemented('UserBookRelation model data not prefetched')
-        for book_id, rel_type, rel_value in self.context['user_book_relations']:
-            if book_id == book.id and rel_type == UserBookRelation.TYPE_WISHLISTED:
-                return True
-        return False
+        return getattr(self.get_relation(book), 'in_bookmarks', False)
 
 
 class ExpandedBookSerializer(BookSerializer):
@@ -63,17 +52,9 @@ class ExpandedBookSerializer(BookSerializer):
 class UserBookRelationSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
-    def validate(self, attrs):
-        attrs = super().validate(attrs)
-        if attrs['type'] == UserBookRelation.TYPE_RATING:
-            rating_values = (c[0] for c in UserBookRelation.RATING_CHOICES)
-            if attrs['value'] not in rating_values:
-                raise ValidationError({'value': 'Incorrect rating value'})
-        return attrs
-
     class Meta:
         model = UserBookRelation
-        fields = ('user', 'book', 'type', 'value', 'created_at')
+        fields = ('user', 'book', 'in_wishlist', 'in_bookmarks', 'rating')
 
 
 class ExpandedUserBookRelationSerializer(UserBookRelationSerializer):

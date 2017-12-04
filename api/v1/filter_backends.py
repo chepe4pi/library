@@ -13,4 +13,4 @@ class StaffAccessFilter(BaseFilterBackend):
 class UserBookRelationFilter(FilterSet):
     class Meta:
         model = UserBookRelation
-        fields = ('user', 'book', 'type')
+        fields = ('user', 'book')
