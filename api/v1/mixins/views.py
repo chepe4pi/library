@@ -24,7 +24,7 @@ class PrefetchUserData(viewsets.GenericViewSet):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context.update({
-            'user_book_relations': []
+            'user_book_relations': UserBookRelation.objects.none()
         })
         if self.request.user.pk:
             context.update({
