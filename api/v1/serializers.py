@@ -38,10 +38,10 @@ class BookSerializer(serializers.ModelSerializer):
         return getattr(self.get_relation(book), 'in_bookmarks', False)
 
     def get_rating(self, book):
-        return getattr(self.get_relation(book), 'in_bookmarks', None)
+        return getattr(self.get_relation(book), 'rating', None)
 
     def get_in_wishlist(self, book):
-        return getattr(self.get_relation(book), 'in_bookmarks', False)
+        return getattr(self.get_relation(book), 'in_wishlist', False)
 
 
 class ExpandedBookSerializer(BookSerializer):
