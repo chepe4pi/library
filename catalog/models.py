@@ -74,32 +74,12 @@ class Book(models.Model):
         return self.title
 
 
-class AbstractUserMark(models.Model):
-    user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='%(class)ss',
-                             verbose_name='Пользователь')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
-
-    class Meta:
-        abstract = True
-
-
-class AbstractUserBookMark(AbstractUserMark):
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='%(class)ss', verbose_name='Книга')
-
-    class Meta:
-        abstract = True
-        unique_together = ('book', 'user')
-
-    def __str__(self):
-        return str(self.book)
-
-
-class AbstractRatingModel(models.Model):
-    RATING_VERY_BAD = 0
-    RATING_BAD = 1
-    RATING_OK = 2
-    RATING_GOOD = 3
-    RATING_VERY_GOOD = 4
+class UserBookRelation(models.Model):
+    RATING_VERY_BAD = 1
+    RATING_BAD = 2
+    RATING_OK = 3
+    RATING_GOOD = 4
+    RATING_VERY_GOOD = 5
 
     RATING_CHOICES = (
         (RATING_VERY_BAD, 'Ужасно'),
@@ -109,28 +89,15 @@ class AbstractRatingModel(models.Model):
         (RATING_VERY_GOOD, 'Отлично'),
     )
 
-    rating = models.PositiveSmallIntegerField(choices=RATING_CHOICES, verbose_name='Оценка')
+    user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='%(class)ss',
+                             verbose_name='Пользователь')
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='%(class)ss', verbose_name='Книга')
+    in_bookmarks = models.BooleanField(default=False, verbose_name='В закладках')
+    in_wishlist = models.BooleanField(default=False, verbose_name='В списке желаний')
+    rating = models.PositiveSmallIntegerField(blank=True, null=True, choices=RATING_CHOICES, verbose_name='Рейтинг')
 
     class Meta:
-        abstract = True
+        unique_together = ('book', 'user')
 
     def __str__(self):
-        return self.get_rating_display()
-
-
-class WishlistedBook(AbstractUserBookMark):
-    pass
-
-
-class Bookmark(AbstractUserBookMark):
-    memo = models.CharField(max_length=255, blank=True, null=True, verbose_name='Памятка')
-
-    def __str__(self):
-        if self.memo:
-            return "%s (%s)" % (self.book, self.memo)
-        return super().__str__()
-
-
-class BookRating(AbstractUserBookMark, AbstractRatingModel):
-    def __str__(self):
-        return self.get_rating_display()
+        return str(self.book)

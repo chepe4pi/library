@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
-from catalog.models import Book, Author, Category, Bookmark, BookRating, WishlistedBook
+from catalog.models import Book, Author, Category, UserBookRelation
 from catalog.logic import in_bookmarks
+from rest_framework.exceptions import ValidationError
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -18,28 +19,29 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class BookSerializer(serializers.ModelSerializer):
     in_bookmarks = serializers.SerializerMethodField()
+    in_wishlist = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Book
         fields = (
             'id', 'title', 'title_original', 'year_published', 'description', 'author', 'categories', 'in_bookmarks',
-            'rating'
+            'rating', 'in_wishlist'
         )
 
+    def get_relation(self, book):
+        if 'user_book_relations' not in self.context:
+            raise NotImplemented('UserBookRelation model data not prefetched')
+        return self.context['user_book_relations'].filter(book__id=book.id).first()
+
     def get_in_bookmarks(self, book):
-        if 'bookmarked_books' in self.context:
-            return book.id in self.context['bookmarked_books']
-        return in_bookmarks(book, self.context['request'].user)
+        return getattr(self.get_relation(book), 'in_bookmarks', False)
 
     def get_rating(self, book):
-        if 'rated_books' in self.context:
-            for book_id, rating in self.context['rated_books']:
-                if book_id == book.id:
-                    return rating
-            return None
-        book_rating = book.bookratings.filter(user=self.context['request'].user)
-        return book_rating.rating if book_rating else None
+        return getattr(self.get_relation(book), 'in_bookmarks', None)
+
+    def get_in_wishlist(self, book):
+        return getattr(self.get_relation(book), 'in_bookmarks', False)
 
 
 class ExpandedBookSerializer(BookSerializer):
@@ -47,36 +49,17 @@ class ExpandedBookSerializer(BookSerializer):
     categories = CategorySerializer(many=True, read_only=True)
 
 
-class BookmarkSerializer(serializers.ModelSerializer):
+class UserBookRelationSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
-        model = Bookmark
-        fields = ('id', 'book', 'user', 'memo', 'created_at')
-        validators = [
-            UniqueTogetherValidator(queryset=Bookmark.objects.all(), fields=('book', 'user'))
-        ]
+        model = UserBookRelation
+        fields = ('user', 'book', 'in_wishlist', 'in_bookmarks', 'rating')
 
 
-class ExpandedBookmarkSerializer(BookmarkSerializer):
-    book = ExpandedBookSerializer(read_only=True)
+class ExpandedUserBookRelationSerializer(UserBookRelationSerializer):
+    book = BookSerializer(read_only=True)
 
 
-class StaffBookmarkSerializer(ExpandedBookmarkSerializer):
-    user = serializers.PrimaryKeyRelatedField
-
-
-class BookRatingSerializer(serializers.ModelSerializer):
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-
-    class Meta:
-        model = BookRating
-        fields = ('id', 'book', 'user', 'rating')
-
-
-class ExpandedBookRatingSerializer(BookRatingSerializer):
-    book = ExpandedBookSerializer(read_only=True)
-
-
-class StaffBookRatingSerializer(BookRatingSerializer):
+class StaffBookRelationSerializer(UserBookRelationSerializer):
     user = serializers.PrimaryKeyRelatedField

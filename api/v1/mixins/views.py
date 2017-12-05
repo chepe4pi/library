@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from catalog.models import Bookmark, BookRating
+from catalog.models import UserBookRelation
 
 
 class ExpandableViewSetMixin(viewsets.GenericViewSet):
@@ -24,12 +24,11 @@ class PrefetchUserData(viewsets.GenericViewSet):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context.update({
-            'bookmarked_books': [],
-            'rated_books': []
+            'user_book_relations': []
         })
         if self.request.user.pk:
             context.update({
-                'bookmarked_books': Bookmark.objects.filter(user=self.request.user).values_list('book__id', flat=True),
-                'rated_books': BookRating.objects.filter(user=self.request.user).values_list('book__id', 'rating')
+                'user_book_relations': UserBookRelation.objects.filter(user=self.request.user)
+                    .values_list('book__id', 'user__id', 'in_bookmarks', 'in_wishlist', 'rating')
             })
         return context
