@@ -50,8 +50,8 @@ class BooksEndpointTestCase(APITestCase):
 
     def test_book_create_user_admin(self):
         self.client.force_authenticate(user=self.admin)
-        new_book = BookFactory.build()
-        response = self.client.post(reverse('api:v1:book-list'), BookSerializer(new_book).data)
+        book_data = BookSerializer(BookFactory.build()).data
+        response = self.client.post(reverse('api:v1:book-list'), book_data)
         self.assertEqual(
             response.status_code, status.HTTP_201_CREATED,
             "Attempting to create a book as admin should return 201 Created"
@@ -60,7 +60,7 @@ class BooksEndpointTestCase(APITestCase):
         expected_data = BookSerializer(Book.objects.get(id=new_id)).data
         expected_data['id'] = None
         self.assertEqual(
-            BookSerializer(new_book).data, expected_data,
+            book_data, expected_data,
             "Data mismatch in newly created book"
         )
 
