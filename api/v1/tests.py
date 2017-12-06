@@ -3,6 +3,7 @@ from catalog.models import Author, Book, Category, UserBookRelation
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from django.urls import reverse
+import status
 
 User = get_user_model()
 client = APIClient()
@@ -34,11 +35,11 @@ class BooksEndpointTestCase(APITestCase):
 
     def test_book_list_load(self):
         response = client.get(reverse('api:v1:book-list'))
-        self.assertEqual(response.status_code, 200, "Book list failed to load")
+        self.assertEqual(response.status_code, status.HTTP_200_OK, "Book list failed to load")
 
     def test_book_detail_load(self):
         response = client.get(reverse('api:v1:book-detail', args=(1,)))
-        self.assertEqual(response.status_code, 200, "Book detail failed to load")
+        self.assertEqual(response.status_code, status.HTTP_200_OK, "Book detail failed to load")
 
     def test_book_create_user_unauthorized(self):
         response = client.post(reverse('api:v1:book-list'), {
@@ -48,7 +49,8 @@ class BooksEndpointTestCase(APITestCase):
             'categories': (1, 2)
         })
         self.assertEqual(
-            response.status_code, 403, "Attempting to create a book as unauthorized user should return 403 Forbidden"
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to create a book as unauthorized user should return 403 Forbidden"
         )
 
     def test_book_create_user_regular(self):
@@ -60,7 +62,8 @@ class BooksEndpointTestCase(APITestCase):
             'categories': (1, 2)
         })
         self.assertEqual(
-            response.status_code, 403, "Attempting to create a book as regular user should return 403 Forbidden"
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to create a book as regular user should return 403 Forbidden"
         )
 
     def test_book_create_user_admin(self):
@@ -72,40 +75,45 @@ class BooksEndpointTestCase(APITestCase):
             'categories': (1, 2)
         })
         self.assertEqual(
-            response.status_code, 201, "Attempting to create a book as admin should return 201 Created"
+            response.status_code, status.HTTP_201_CREATED,
+            "Attempting to create a book as admin should return 201 Created"
         )
         new_id = response.json()['id']
         response = client.get(reverse('api:v1:book-detail', args=(new_id,)))
-        self.assertEqual(response.status_code, 200, "Failed to access newly created book")
+        self.assertEqual(response.status_code, status.HTTP_200_OK, "Failed to access newly created book")
 
     def test_book_delete_user_unauthorized(self):
         response = client.delete(reverse('api:v1:book-detail', args=(1,)))
         self.assertEqual(
-            response.status_code, 403, "Attempting to delete a book as unauthorized user should return 403 Forbidden"
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to delete a book as unauthorized user should return 403 Forbidden"
         )
 
     def test_book_delete_user_regular(self):
         client.login(username='user1', password='123123qwe')
         response = client.delete(reverse('api:v1:book-detail', args=(1,)))
         self.assertEqual(
-            response.status_code, 403, "Attempting to delete a book as regular user should return 403 Forbidden"
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to delete a book as regular user should return 403 Forbidden"
         )
 
     def test_book_delete_user_admin(self):
         client.login(username='admin', password='123123qwe')
         response = client.delete(reverse('api:v1:book-detail', args=(1,)))
-        self.assertIn(
-            response.status_code, (200, 202, 204), "Attempting to delete a book as admin should return 200, 202 or 204"
+        self.assertEqual(
+            response.status_code, status.HTTP_204_NO_CONTENT,
+            "Attempting to delete a book as admin should return 204 No Content"
         )
         response = client.get(reverse('api:v1:book-detail', args=(1,)))
-        self.assertEqual(response.status_code, 404, "Failed to properly delete a book")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND, "Failed to properly delete a book")
 
     def test_book_update_user_unauthorized(self):
         response = client.patch(reverse('api:v1:book-detail', args=(1,)), {
             'title': 'TitleModified'
         })
         self.assertEqual(
-            response.status_code, 403, "Attempting to delete a book as unauthorized user should return 403 Forbidden"
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to delete a book as unauthorized user should return 403 Forbidden"
         )
 
     def test_book_update_user_regular(self):
@@ -114,7 +122,8 @@ class BooksEndpointTestCase(APITestCase):
             'title': 'TitleModified'
         })
         self.assertEqual(
-            response.status_code, 403, "Attempting to delete a book as unauthorized user should return 403 Forbidden"
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to delete a book as unauthorized user should return 403 Forbidden"
         )
 
     def test_book_update_user_admin(self):
@@ -122,8 +131,9 @@ class BooksEndpointTestCase(APITestCase):
         response = client.patch(reverse('api:v1:book-detail', args=(1,)), {
             'title': 'TitleModified'
         })
-        self.assertIn(
-            response.status_code, (200, 202, 204), "Attempting to update a book as admin should return 200, 202 or 204"
+        self.assertEqual(
+            response.status_code, status.HTTP_204_NO_CONTENT,
+            "Attempting to update a book as admin should return 204 No Content"
         )
         response = client.get(reverse('api:v1:book-detail', args=(1,)))
         self.assertEqual(response.json()['title'], 'TitleModified', "Failed to properly modify resource")

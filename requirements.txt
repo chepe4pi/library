@@ -1,3 +1,8 @@
 Django==1.11.7
+django-debug-toolbar==1.9.1
+django-filter==1.1.0
 djangorestframework==3.7.3
+pkg-resources==0.0.0
+python-status==1.0.1
 pytz==2017.3
+sqlparse==0.2.4
