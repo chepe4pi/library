@@ -21,14 +21,20 @@ class StaffViewSetMixin(viewsets.GenericViewSet):
 
 
 class PrefetchUserData(viewsets.GenericViewSet):
+    @classmethod
+    def get_extra_context(cls, user=None):
+        context = {
+            'user_book_relations': UserBookRelation.objects.none()
+        }
+        if user and user.pk:
+            context.update({
+                'user_book_relations': UserBookRelation.objects.filter(user=user).values_list(
+                    'book__id', 'user__id', 'in_bookmarks', 'in_wishlist', 'rating'
+                )
+            })
+        return context
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update({
-            'user_book_relations': UserBookRelation.objects.none()
-        })
-        if self.request.user.pk:
-            context.update({
-                'user_book_relations': UserBookRelation.objects.filter(user=self.request.user)
-                    .values_list('book__id', 'user__id', 'in_bookmarks', 'in_wishlist', 'rating')
-            })
+        context.update(PrefetchUserData.get_extra_context(self.request.user))
         return context
