@@ -30,20 +30,20 @@ class BookSerializer(serializers.ModelSerializer):
         if 'user_book_relations' not in self.context:
             raise NotImplementedError('User data relation not prefetched; prefetch data to avoid N+1 problem')
         for relation in self.context['user_book_relations']:
-            if relation[0] == book.id:
+            if relation['book__id'] == book.id:
                 return relation
 
     def get_in_bookmarks(self, book):
         relation = self.get_relation(book)
-        return relation[2] if relation else False
+        return relation['in_bookmarks'] if relation else False
 
     def get_rating(self, book):
         relation = self.get_relation(book)
-        return relation[4] if relation else None
+        return relation['rating'] if relation else None
 
     def get_in_wishlist(self, book):
         relation = self.get_relation(book)
-        return relation[3] if relation else False
+        return relation['in_wishlist'] if relation else False
 
 
 class ExpandedBookSerializer(BookSerializer):

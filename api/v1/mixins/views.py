@@ -28,7 +28,7 @@ class PrefetchUserData(viewsets.GenericViewSet):
         }
         if user and user.pk:
             context.update({
-                'user_book_relations': UserBookRelation.objects.filter(user=user).values_list(
+                'user_book_relations': UserBookRelation.objects.filter(user=user).values(
                     'book__id', 'user__id', 'in_bookmarks', 'in_wishlist', 'rating'
                 )
             })
