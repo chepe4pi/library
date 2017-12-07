@@ -25,11 +25,19 @@ class BooksEndpointTestCase(APITestCase):
     def test_book_list_load(self):
         response = self.client.get(reverse('api:v1:book-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK, "Book list failed to load")
+        self.assertEqual(
+            response.json()['results'], BookSerializer(self.books, many=True).data,
+            "Data mismatch in book list"
+        )
 
     def test_book_detail_load(self):
         book = random.choice(self.books)
         response = self.client.get(reverse('api:v1:book-detail', args=(book.id,)))
         self.assertEqual(response.status_code, status.HTTP_200_OK, "Book detail failed to load")
+        self.assertEqual(
+            response.json(), BookSerializer(book).data,
+            "Data mismatch in book detail"
+        )
 
     def test_book_create_user_unauthorized(self):
         new_book = BookFactory.build()
@@ -89,8 +97,7 @@ class BooksEndpointTestCase(APITestCase):
             response.status_code, status.HTTP_204_NO_CONTENT,
             "Attempting to delete a book as admin should return 204 No Content"
         )
-        deleted_book = Book.objects.filter(id=book.id).first()
-        self.assertIsNone(deleted_book, "Failed to properly delete a book")
+        self.assertFalse(Book.objects.filter(id=book.id).exists(), "Failed to properly delete a book")
 
     def test_book_update_user_unauthorized(self):
         book = random.choice(self.books)
