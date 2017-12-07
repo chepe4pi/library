@@ -31,9 +31,7 @@ class BookSerializer(serializers.ModelSerializer):
 
     def get_relation(self, book):
         if 'user_book_relations' not in self.context:
-            request = self.context.get('request', None)
-            user = getattr(request, 'user', None)
-            return UserBookRelation.objects.filter(book=book, user=user).first()
+            raise NotImplementedError('User data relation not prefetched; prefetch data to avoid N+1 problem')
         return self.context['user_book_relations'].filter(book__id=book.id).first()
 
     def get_in_bookmarks(self, book):
