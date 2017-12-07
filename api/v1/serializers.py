@@ -1,8 +1,5 @@
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
 from catalog.models import Book, Author, Category, UserBookRelation
-from catalog.logic import in_bookmarks
-from rest_framework.exceptions import ValidationError
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -31,19 +28,22 @@ class BookSerializer(serializers.ModelSerializer):
 
     def get_relation(self, book):
         if 'user_book_relations' not in self.context:
-            request = self.context.get('request', None)
-            user = getattr(request, 'user', None)
-            return UserBookRelation.objects.filter(book=book, user=user).first()
-        return self.context['user_book_relations'].filter(book__id=book.id).first()
+            raise NotImplementedError('User data relation not prefetched; prefetch data to avoid N+1 problem')
+        for relation in self.context['user_book_relations']:
+            if relation[0] == book.id:
+                return relation
 
     def get_in_bookmarks(self, book):
-        return getattr(self.get_relation(book), 'in_bookmarks', False)
+        relation = self.get_relation(book)
+        return relation[2] if relation else False
 
     def get_rating(self, book):
-        return getattr(self.get_relation(book), 'rating', None)
+        relation = self.get_relation(book)
+        return relation[4] if relation else None
 
     def get_in_wishlist(self, book):
-        return getattr(self.get_relation(book), 'in_wishlist', False)
+        relation = self.get_relation(book)
+        return relation[3] if relation else False
 
 
 class ExpandedBookSerializer(BookSerializer):
