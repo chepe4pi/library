@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from .factories import UserFactory, BookFactory, UserBookRelationFactory, AuthorFactory, CategoryFactory
 from ..mixins.views import PrefetchUserData
-from api.v1.serializers import BookSerializer, UserBookRelationSerializer
+from api.v1.serializers import BookSerializer, UserBookRelationSerializer, StaffBookRelationSerializer
 import status, pdb, random
 
 User = get_user_model()
@@ -12,8 +12,8 @@ User = get_user_model()
 
 class BooksEndpointTestCase(APITestCase):
     def setUp(self):
-        self.admin = UserFactory.create(is_superuser=True)
-        self.user = UserFactory.create(is_superuser=False)
+        self.admin = UserFactory.create(is_superuser=True, is_staff=True)
+        self.user = UserFactory.create(is_superuser=False, is_staff=False)
 
         self.authors = AuthorFactory.create_batch(2)
         self.categories = CategoryFactory.create_batch(5)
@@ -142,8 +142,8 @@ class BooksEndpointTestCase(APITestCase):
 
 class UserBookRelationsEndpointTestCase(APITestCase):
     def setUp(self):
-        self.admin = UserFactory.create(is_superuser=True)
-        self.user = UserFactory.create(is_superuser=False)
+        self.admin = UserFactory.create(is_superuser=True, is_staff=True)
+        self.user = UserFactory.create(is_superuser=False, is_staff=False)
 
         self.authors = AuthorFactory.create_batch(2)
         self.categories = CategoryFactory.create_batch(5)
@@ -154,7 +154,9 @@ class UserBookRelationsEndpointTestCase(APITestCase):
     def tearDown(self):
         pass
 
-    def get_serializer(self, data, **kwargs):
+    def get_serializer(self, data, user=None, **kwargs):
+        if user and user.is_staff:
+            return StaffBookRelationSerializer(data, **kwargs)
         return UserBookRelationSerializer(data, **kwargs)
 
     def test_relations_list_unauthorized_load(self):
@@ -173,7 +175,7 @@ class UserBookRelationsEndpointTestCase(APITestCase):
         )
         relations = UserBookRelation.objects.filter(user=self.user).all()
         self.assertEqual(
-            response.json()['results'], self.get_serializer(relations, many=True).data,
+            response.json()['results'], self.get_serializer(relations, user=self.user, many=True).data,
             "Data mismatch for user book relations list"
         )
 
@@ -184,9 +186,9 @@ class UserBookRelationsEndpointTestCase(APITestCase):
             response.status_code, status.HTTP_200_OK,
             "Attempting to access a book relations list as admin should return 200 OK"
         )
-        relations = UserBookRelation.objects.filter(user=self.admin).all()
+        relations = UserBookRelation.objects.all()
         self.assertEqual(
-            response.json()['results'], self.get_serializer(relations, many=True).data,
+            response.json()['results'], self.get_serializer(relations, user=self.admin, many=True).data,
             "Data mismatch for user book relations list"
         )
 
@@ -207,7 +209,7 @@ class UserBookRelationsEndpointTestCase(APITestCase):
             "Attempting to access own relations detail as user should return 200 OK"
         )
         self.assertEqual(
-            response.json(), self.get_serializer(relation).data,
+            response.json(), self.get_serializer(relation, user=self.user).data,
             "Data mismatch for relation detail"
         )
 
@@ -229,7 +231,7 @@ class UserBookRelationsEndpointTestCase(APITestCase):
             "Attempting to access own relation detail as admin should return 200 OK"
         )
         self.assertEqual(
-            response.json(), self.get_serializer(relation).data,
+            response.json(), self.get_serializer(relation, user=self.admin).data,
             "Data mismatch for relation detail"
         )
 
@@ -242,7 +244,7 @@ class UserBookRelationsEndpointTestCase(APITestCase):
             "Attempting to access other user's relation detail as admin should return 200 OK"
         )
         self.assertEqual(
-            response.json(), self.get_serializer(relation).data,
+            response.json(), self.get_serializer(relation, user=self.admin).data,
             "Data mismatch for relation detail"
         )
 
@@ -263,7 +265,7 @@ class UserBookRelationsEndpointTestCase(APITestCase):
             "Attempting to create an own book relation as regular user should return 201 Created"
         )
         self.assertEqual(
-            response.json(), self.get_serializer(new_relation).data,
+            response.json(), self.get_serializer(new_relation, user=self.user).data,
             "Data mismatch for newly created book relation"
         )
 
@@ -281,13 +283,16 @@ class UserBookRelationsEndpointTestCase(APITestCase):
         self.client.force_authenticate(user=self.admin)
         new_book = BookFactory.create()
         new_relation = UserBookRelationFactory.build(user=self.admin, book=new_book)
-        response = self.client.post(reverse('api:v1:userbookrelation-list'), self.get_serializer(new_relation).data)
+        response = self.client.post(
+            reverse('api:v1:userbookrelation-list'),
+            self.get_serializer(new_relation, user=self.admin).data
+        )
         self.assertEqual(
             response.status_code, status.HTTP_201_CREATED,
             "Attempting to create an own book relation as admin should return 201 Created"
         )
         self.assertEqual(
-            response.json(), self.get_serializer(new_relation).data,
+            response.json(), self.get_serializer(new_relation, user=self.admin).data,
             "Data mismatch for newly created book relation"
         )
 
@@ -295,13 +300,16 @@ class UserBookRelationsEndpointTestCase(APITestCase):
         self.client.force_authenticate(user=self.admin)
         new_book = BookFactory.create()
         new_relation = UserBookRelationFactory.build(user=self.user, book=new_book)
-        response = self.client.post(reverse('api:v1:userbookrelation-list'), self.get_serializer(new_relation).data)
+        response = self.client.post(
+            reverse('api:v1:userbookrelation-list'),
+            self.get_serializer(new_relation, user=self.admin).data
+        )
         self.assertEqual(
             response.status_code, status.HTTP_201_CREATED,
             "Attempting to create an other user's relation as admin should return 201 Created"
         )
         self.assertEqual(
-            response.json(), self.get_serializer(new_relation).data,
+            response.json(), self.get_serializer(new_relation, user=self.admin).data,
             "Data mismatch for newly created book relation"
         )
 
@@ -382,8 +390,8 @@ class UserBookRelationsEndpointTestCase(APITestCase):
         self.assertNotEqual(updated_relation.in_bookmarks, relation.in_bookmarks, "Failed to properly modify resource")
 
     def test_relation_update_user_other(self):
-        self.client.force_authenticate(self.admin)
-        relation = UserBookRelation.objects.filter(user=self.user).first()
+        self.client.force_authenticate(self.user)
+        relation = UserBookRelation.objects.filter(user=self.admin).first()
         response = self.client.patch(reverse('api:v1:userbookrelation-detail', args=(relation.id,)), {
             'in_bookmarks': not relation.in_bookmarks
         })
