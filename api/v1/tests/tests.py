@@ -1,10 +1,11 @@
 from rest_framework.test import APITestCase
-from catalog.models import Book, UserBookRelation
+from catalog.models import Book, UserBookRelation, Author, Category
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from .factories import UserFactory, BookFactory, UserBookRelationFactory, AuthorFactory, CategoryFactory
 from ..mixins.views import PrefetchUserData
-from api.v1.serializers import BookSerializer, UserBookRelationSerializer, StaffBookRelationSerializer
+from api.v1.serializers import BookSerializer, UserBookRelationSerializer, StaffBookRelationSerializer, \
+    AuthorSerializer, CategorySerializer
 import status, pdb, random
 
 User = get_user_model()
@@ -425,3 +426,129 @@ class UserBookRelationsEndpointTestCase(APITestCase):
         )
         updated_relation = UserBookRelation.objects.get(id=relation.id)
         self.assertNotEqual(updated_relation.in_bookmarks, relation.in_bookmarks, "Failed to properly modify resource")
+
+
+class AuthorsEndpointTestCase(APITestCase):
+    def setUp(self):
+        self.admin = UserFactory.create(is_superuser=True, is_staff=True)
+        self.user = UserFactory.create(is_superuser=False, is_staff=False)
+
+        self.authors = AuthorFactory.create_batch(5)
+
+    def tearDown(self):
+        pass
+
+    def get_serializer(self, data, **kwargs):
+        return AuthorSerializer(data, **kwargs)
+
+    def test_author_list_load(self):
+        response = self.client.get(reverse('api:v1:author-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK, "Author list failed to load")
+        self.assertEqual(
+            response.json()['results'], self.get_serializer(self.authors, many=True).data,
+            "Data mismatch in author list"
+        )
+
+    def test_author_detail_load(self):
+        author = random.choice(self.authors)
+        response = self.client.get(reverse('api:v1:author-detail', args=(author.id,)))
+        self.assertEqual(response.status_code, status.HTTP_200_OK, "Book detail failed to load")
+        self.assertEqual(
+            response.json(), self.get_serializer(author).data,
+            "Data mismatch in author detail"
+        )
+
+    def test_author_create_user_unauthorized(self):
+        new_author = AuthorFactory.build()
+        response = self.client.post(reverse('api:v1:author-list'), self.get_serializer(new_author).data)
+        self.assertEqual(
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to create an author as unauthorized user should return 403 Forbidden"
+        )
+
+    def test_author_create_user_regular(self):
+        self.client.force_authenticate(user=self.user)
+        new_author = AuthorFactory.build()
+        response = self.client.post(reverse('api:v1:author-list'), self.get_serializer(new_author).data)
+        self.assertEqual(
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to create an author as regular user should return 403 Forbidden"
+        )
+
+    def test_author_create_user_admin(self):
+        self.client.force_authenticate(user=self.admin)
+        new_author = AuthorFactory.build()
+        author_data = self.get_serializer(new_author).data
+        response = self.client.post(reverse('api:v1:author-list'), author_data)
+        self.assertEqual(
+            response.status_code, status.HTTP_201_CREATED,
+            "Attempting to create an author as admin should return 201 Created"
+        )
+        new_id = response.json()['id']
+        expected_data = self.get_serializer(Author.objects.get(id=new_id)).data
+        expected_data['id'] = None
+        self.assertEqual(
+            author_data, expected_data,
+            "Data mismatch in newly created author"
+        )
+
+    def test_author_delete_user_unauthorized(self):
+        author = random.choice(self.authors)
+        response = self.client.delete(reverse('api:v1:author-detail', args=(author.id,)))
+        self.assertEqual(
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to delete an author as unauthorized user should return 403 Forbidden"
+        )
+
+    def test_author_delete_user_regular(self):
+        self.client.force_authenticate(self.user)
+        author = random.choice(self.authors)
+        response = self.client.delete(reverse('api:v1:author-detail', args=(author.id,)))
+        self.assertEqual(
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to delete an author as regular user should return 403 Forbidden"
+        )
+
+    def test_author_delete_user_admin(self):
+        self.client.force_authenticate(self.admin)
+        author = random.choice(self.authors)
+        response = self.client.delete(reverse('api:v1:author-detail', args=(author.id,)))
+        self.assertEqual(
+            response.status_code, status.HTTP_204_NO_CONTENT,
+            "Attempting to delete an author as admin should return 204 No Content"
+        )
+        self.assertFalse(Book.objects.filter(id=author.id).exists(), "Failed to properly delete an author")
+
+    def test_author_update_user_unauthorized(self):
+        author = random.choice(self.authors)
+        response = self.client.patch(reverse('api:v1:author-detail', args=(author.id,)), {
+            'name': 'NewName'
+        })
+        self.assertEqual(
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to delete an author as unauthorized user should return 403 Forbidden"
+        )
+
+    def test_author_update_user_regular(self):
+        self.client.force_authenticate(self.user)
+        author = random.choice(self.authors)
+        response = self.client.patch(reverse('api:v1:author-detail', args=(author.id,)), {
+            'name': 'NewName'
+        })
+        self.assertEqual(
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to delete an author as unauthorized user should return 403 Forbidden"
+        )
+
+    def test_author_update_user_admin(self):
+        self.client.force_authenticate(self.admin)
+        author = random.choice(self.authors)
+        response = self.client.patch(reverse('api:v1:author-detail', args=(author.id,)), {
+            'name': 'NewName'
+        })
+        self.assertEqual(
+            response.status_code, status.HTTP_200_OK,
+            "Attempting to update an author as admin should return 200 OK"
+        )
+        updated_author = Author.objects.get(id=author.id)
+        self.assertEqual(updated_author.name, 'NewName', "Failed to properly modify resource")
