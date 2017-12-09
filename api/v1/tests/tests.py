@@ -124,7 +124,7 @@ class BooksEndpointTestCase(APITestCase):
         })
         self.assertEqual(
             response.status_code, status.HTTP_403_FORBIDDEN,
-            "Attempting to delete a book as unauthorized user should return 403 Forbidden"
+            "Attempting to delete a book as regular user should return 403 Forbidden"
         )
 
     def test_book_update_user_admin(self):
@@ -537,7 +537,7 @@ class AuthorsEndpointTestCase(APITestCase):
         })
         self.assertEqual(
             response.status_code, status.HTTP_403_FORBIDDEN,
-            "Attempting to delete an author as unauthorized user should return 403 Forbidden"
+            "Attempting to delete an author as regular user should return 403 Forbidden"
         )
 
     def test_author_update_user_admin(self):
@@ -552,3 +552,129 @@ class AuthorsEndpointTestCase(APITestCase):
         )
         updated_author = Author.objects.get(id=author.id)
         self.assertEqual(updated_author.name, 'NewName', "Failed to properly modify resource")
+
+
+class CategoriesEndpointTestCase(APITestCase):
+    def setUp(self):
+        self.admin = UserFactory.create(is_superuser=True, is_staff=True)
+        self.user = UserFactory.create(is_superuser=False, is_staff=False)
+
+        self.categories = CategoryFactory.create_batch(5)
+
+    def tearDown(self):
+        pass
+
+    def get_serializer(self, data, **kwargs):
+        return CategorySerializer(data, **kwargs)
+
+    def test_category_list_load(self):
+        response = self.client.get(reverse('api:v1:category-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK, "Category list failed to load")
+        self.assertEqual(
+            response.json()['results'], self.get_serializer(self.categories, many=True).data,
+            "Data mismatch in category list"
+        )
+
+    def test_category_detail_load(self):
+        category = random.choice(self.categories)
+        response = self.client.get(reverse('api:v1:category-detail', args=(category.id,)))
+        self.assertEqual(response.status_code, status.HTTP_200_OK, "Book detail failed to load")
+        self.assertEqual(
+            response.json(), self.get_serializer(category).data,
+            "Data mismatch in category detail"
+        )
+
+    def test_category_create_user_unauthorized(self):
+        new_category = CategoryFactory.build()
+        response = self.client.post(reverse('api:v1:category-list'), self.get_serializer(new_category).data)
+        self.assertEqual(
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to create a category as unauthorized user should return 403 Forbidden"
+        )
+
+    def test_category_create_user_regular(self):
+        self.client.force_authenticate(user=self.user)
+        new_category = CategoryFactory.build()
+        response = self.client.post(reverse('api:v1:category-list'), self.get_serializer(new_category).data)
+        self.assertEqual(
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to create a category as regular user should return 403 Forbidden"
+        )
+
+    def test_category_create_user_admin(self):
+        self.client.force_authenticate(user=self.admin)
+        new_category = CategoryFactory.build()
+        category_data = self.get_serializer(new_category).data
+        response = self.client.post(reverse('api:v1:category-list'), category_data)
+        self.assertEqual(
+            response.status_code, status.HTTP_201_CREATED,
+            "Attempting to create a category as admin should return 201 Created"
+        )
+        new_id = response.json()['id']
+        expected_data = self.get_serializer(Category.objects.get(id=new_id)).data
+        expected_data['id'] = None
+        self.assertEqual(
+            category_data, expected_data,
+            "Data mismatch in newly created category"
+        )
+
+    def test_category_delete_user_unauthorized(self):
+        category = random.choice(self.categories)
+        response = self.client.delete(reverse('api:v1:category-detail', args=(category.id,)))
+        self.assertEqual(
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to delete a category as unauthorized user should return 403 Forbidden"
+        )
+
+    def test_category_delete_user_regular(self):
+        self.client.force_authenticate(self.user)
+        category = random.choice(self.categories)
+        response = self.client.delete(reverse('api:v1:category-detail', args=(category.id,)))
+        self.assertEqual(
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to delete a category as regular user should return 403 Forbidden"
+        )
+
+    def test_category_delete_user_admin(self):
+        self.client.force_authenticate(self.admin)
+        category = random.choice(self.categories)
+        response = self.client.delete(reverse('api:v1:category-detail', args=(category.id,)))
+        self.assertEqual(
+            response.status_code, status.HTTP_204_NO_CONTENT,
+            "Attempting to delete a category as admin should return 204 No Content"
+        )
+        self.assertFalse(Book.objects.filter(id=category.id).exists(), "Failed to properly delete a category")
+
+    def test_category_update_user_unauthorized(self):
+        category = random.choice(self.categories)
+        response = self.client.patch(reverse('api:v1:category-detail', args=(category.id,)), {
+            'name': 'NewName'
+        })
+        self.assertEqual(
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to delete a category as unauthorized user should return 403 Forbidden"
+        )
+
+    def test_category_update_user_regular(self):
+        self.client.force_authenticate(self.user)
+        category = random.choice(self.categories)
+        response = self.client.patch(reverse('api:v1:category-detail', args=(category.id,)), {
+            'name': 'NewName'
+        })
+        self.assertEqual(
+            response.status_code, status.HTTP_403_FORBIDDEN,
+            "Attempting to delete a category as user should return 403 Forbidden"
+        )
+
+    def test_category_update_user_admin(self):
+        self.client.force_authenticate(self.admin)
+        category = random.choice(self.categories)
+        response = self.client.patch(reverse('api:v1:category-detail', args=(category.id,)), {
+            'name': 'NewName'
+        })
+        self.assertEqual(
+            response.status_code, status.HTTP_200_OK,
+            "Attempting to update a category as admin should return 200 OK"
+        )
+        updated_category = Category.objects.get(id=category.id)
+        self.assertEqual(updated_category.name, 'NewName', "Failed to properly modify resource")
