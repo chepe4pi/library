@@ -38,7 +38,6 @@ class BookFactory(DjangoModelFactory):
     title = Faker('word')
     title_original = Faker('word')
     author = factory.Iterator(Author.objects.all())
-    year_published = Faker('year')
 
     @factory.post_generation
     def categories(self, create, extracted, **kwargs):
