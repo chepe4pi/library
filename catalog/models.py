@@ -45,6 +45,19 @@ class Category(models.Model):
         return self.name
 
 
+class DiscountGroup(models.Model):
+    name = models.CharField(max_length=255, verbose_name='Наименование')
+    discount = models.DecimalField(max_digits=5, decimal_places=2, verbose_name='Скидка в процентах')
+    description = models.TextField(blank=True, null=True, verbose_name='Описание')
+
+    class Meta:
+        verbose_name = 'группа скидок'
+        verbose_name_plural = 'группы скидок'
+
+    def __str__(self):
+        return self.name
+
+
 class Book(models.Model):
     COVER_TYPE_HARDBACK = 0
     COVER_TYPE_PAPERBACK = 1
@@ -60,11 +73,16 @@ class Book(models.Model):
     isbn = models.CharField(max_length=17, blank=True, null=True, verbose_name='ISBN')
     cover_type = models.PositiveSmallIntegerField(choices=COVER_TYPE_CHOICES, blank=True, null=True,
                                                   verbose_name='Тип обложки')
+    price = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True, verbose_name='Цена')
+    discount = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True,
+                                   verbose_name='Скидка в процентах')
 
     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='books', verbose_name='Автор')
     publisher = models.ForeignKey(Publisher, on_delete=models.SET_NULL, related_name='books', blank=True, null=True,
                                   verbose_name='Издательство')
     categories = models.ManyToManyField(Category, blank=True, related_name='books', verbose_name='Категории')
+    discount_group = models.ForeignKey(DiscountGroup, on_delete=models.SET_NULL, related_name='books', blank=True,
+                                       null=True, verbose_name='Группа скидок')
 
     class Meta:
         verbose_name = 'книга'
