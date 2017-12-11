@@ -28,3 +28,10 @@ class PublisherAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     list_display_links = ('id', 'name')
     search_fields = ('id', 'name')
+
+
+@admin.register(models.DiscountGroup)
+class DiscountGroupAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
+    list_display_links = ('id', 'name')
+    search_fields = ('id', 'name')
