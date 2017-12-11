@@ -5,7 +5,7 @@ from django.urls import reverse
 from .factories import UserFactory, BookFactory, UserBookRelationFactory, AuthorFactory, CategoryFactory
 from ..mixins.views import PrefetchUserData
 from api.v1.serializers import BookSerializer, UserBookRelationSerializer, StaffBookRelationSerializer, \
-    AuthorSerializer, CategorySerializer
+    AuthorSerializer, CategorySerializer, ExpandedUserBookRelationSerializer, ExpandedBookSerializer
 import status, pdb, random
 
 User = get_user_model()
@@ -139,6 +139,21 @@ class BooksEndpointTestCase(APITestCase):
         )
         updated_book = Book.objects.get(id=book.id)
         self.assertEqual(updated_book.title, 'TitleModified', "Failed to properly modify resource")
+
+    def test_expanded(self):
+        books = Book.objects.all()
+        expected_data = ExpandedBookSerializer(
+            books, many=True, context=PrefetchUserData.get_extra_context()
+        ).data
+        response = self.client.get(reverse('api:v1:book-list'), {'expand': True})
+        self.assertEqual(
+            response.status_code, status.HTTP_200_OK,
+            "Attempting to access expanded books list should return 200 OK"
+        )
+        self.assertEqual(
+            response.json()['results'], expected_data,
+            "Data mismatch for expanded list"
+        )
 
 
 class UserBookRelationsEndpointTestCase(APITestCase):
@@ -426,6 +441,39 @@ class UserBookRelationsEndpointTestCase(APITestCase):
         )
         updated_relation = UserBookRelation.objects.get(id=relation.id)
         self.assertNotEqual(updated_relation.in_bookmarks, relation.in_bookmarks, "Failed to properly modify resource")
+
+    def test_filter(self):
+        self.client.force_authenticate(self.user)
+        book = random.choice(self.books)
+        relations = UserBookRelation.objects.filter(user=self.user, book=book)
+        expected_data = UserBookRelationSerializer(
+            relations, many=True, context=PrefetchUserData.get_extra_context(self.user)
+        ).data
+        response = self.client.get(reverse('api:v1:userbookrelation-list'), {'book': book.id})
+        self.assertEqual(
+            response.status_code, status.HTTP_200_OK,
+            "Attempting to access filtered relations list should return 200 OK"
+        )
+        self.assertEqual(
+            expected_data, response.json()['results'],
+            "Data mismatch for filtered list"
+        )
+
+    def test_expanded(self):
+        self.client.force_authenticate(self.user)
+        relations = UserBookRelation.objects.filter(user=self.user)
+        expected_data = ExpandedUserBookRelationSerializer(
+            relations, many=True, context=PrefetchUserData.get_extra_context(self.user)
+        ).data
+        response = self.client.get(reverse('api:v1:userbookrelation-list'), {'expand': True})
+        self.assertEqual(
+            response.status_code, status.HTTP_200_OK,
+            "Attempting to access expanded relations list should return 200 OK"
+        )
+        self.assertEqual(
+            expected_data, response.json()['results'],
+            "Data mismatch for expanded list"
+        )
 
 
 class AuthorsEndpointTestCase(APITestCase):
