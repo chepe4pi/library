@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from . import logic
+from django.forms import ValidationError
 
 UserModel = get_user_model()
 
@@ -98,6 +99,10 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
+
+    def clean(self):
+        if self.price_original == 0:
+            raise ValidationError({'price_original': 'Цена без учета скидки не может быть равной нулю'})
 
     def save(self, *args, **kwargs):
         self.price = logic.book_price_with_discount(self)
