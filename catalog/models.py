@@ -58,6 +58,11 @@ class DiscountGroup(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        for book in self.books.all():
+            book.save()
+
 
 class Book(models.Model):
     COVER_TYPE_HARDBACK = 0
