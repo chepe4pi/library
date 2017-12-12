@@ -25,7 +25,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
 
 
-class UserBookRelationViewSet(ExpandableViewSetMixin, StaffViewSetMixin, viewsets.ModelViewSet):
+class UserBookRelationViewSet(ExpandableViewSetMixin, PrefetchUserData, StaffViewSetMixin, viewsets.ModelViewSet):
     serializer_class = UserBookRelationSerializer
     serializer_expanded_class = ExpandedUserBookRelationSerializer
     staff_serializer_class = StaffBookRelationSerializer

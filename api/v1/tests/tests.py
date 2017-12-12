@@ -1,12 +1,14 @@
 from rest_framework.test import APITestCase
+from django.test.testcases import TestCase
 from catalog.models import Book, UserBookRelation, Author, Category
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from .factories import UserFactory, BookFactory, UserBookRelationFactory, AuthorFactory, CategoryFactory
 from ..mixins.views import PrefetchUserData
 from api.v1.serializers import BookSerializer, UserBookRelationSerializer, StaffBookRelationSerializer, \
-    AuthorSerializer, CategorySerializer
+    AuthorSerializer, CategorySerializer, ExpandedUserBookRelationSerializer, ExpandedBookSerializer
 import status, pdb, random
+from collections import OrderedDict
 
 User = get_user_model()
 
@@ -139,6 +141,21 @@ class BooksEndpointTestCase(APITestCase):
         )
         updated_book = Book.objects.get(id=book.id)
         self.assertEqual(updated_book.title, 'TitleModified', "Failed to properly modify resource")
+
+    def test_expanded(self):
+        books = Book.objects.all()
+        expected_data = ExpandedBookSerializer(
+            books, many=True, context=PrefetchUserData.get_extra_context()
+        ).data
+        response = self.client.get(reverse('api:v1:book-list'), {'expand': True})
+        self.assertEqual(
+            response.status_code, status.HTTP_200_OK,
+            "Attempting to access expanded books list should return 200 OK"
+        )
+        self.assertEqual(
+            response.json()['results'], expected_data,
+            "Data mismatch for expanded list"
+        )
 
 
 class UserBookRelationsEndpointTestCase(APITestCase):
@@ -427,6 +444,39 @@ class UserBookRelationsEndpointTestCase(APITestCase):
         updated_relation = UserBookRelation.objects.get(id=relation.id)
         self.assertNotEqual(updated_relation.in_bookmarks, relation.in_bookmarks, "Failed to properly modify resource")
 
+    def test_filter(self):
+        self.client.force_authenticate(self.user)
+        book = random.choice(self.books)
+        relations = UserBookRelation.objects.filter(user=self.user, book=book)
+        expected_data = UserBookRelationSerializer(
+            relations, many=True, context=PrefetchUserData.get_extra_context(self.user)
+        ).data
+        response = self.client.get(reverse('api:v1:userbookrelation-list'), {'book': book.id})
+        self.assertEqual(
+            response.status_code, status.HTTP_200_OK,
+            "Attempting to access filtered relations list should return 200 OK"
+        )
+        self.assertEqual(
+            expected_data, response.json()['results'],
+            "Data mismatch for filtered list"
+        )
+
+    def test_expanded(self):
+        self.client.force_authenticate(self.user)
+        relations = UserBookRelation.objects.filter(user=self.user)
+        expected_data = ExpandedUserBookRelationSerializer(
+            relations, many=True, context=PrefetchUserData.get_extra_context(self.user)
+        ).data
+        response = self.client.get(reverse('api:v1:userbookrelation-list'), {'expand': True})
+        self.assertEqual(
+            response.status_code, status.HTTP_200_OK,
+            "Attempting to access expanded relations list should return 200 OK"
+        )
+        self.assertEqual(
+            expected_data, response.json()['results'],
+            "Data mismatch for expanded list"
+        )
+
 
 class AuthorsEndpointTestCase(APITestCase):
     def setUp(self):
@@ -678,3 +728,120 @@ class CategoriesEndpointTestCase(APITestCase):
         )
         updated_category = Category.objects.get(id=category.id)
         self.assertEqual(updated_category.name, 'NewName', "Failed to properly modify resource")
+
+
+class SerializersTestCase(TestCase):
+    def test_book_serializer(self):
+        CategoryFactory.create_batch(3)
+        AuthorFactory.create()
+        user = UserFactory.create()
+        book = BookFactory.create()
+        relation = UserBookRelationFactory.create(user=user, book=book)
+        expected_data = {
+            'id': book.id,
+            'title': book.title,
+            'title_original': book.title_original,
+            'year_published': book.year_published,
+            'description': book.description,
+            'author': book.author_id,
+            'categories': [c.id for c in book.categories.all()],
+            'in_bookmarks': relation.in_bookmarks,
+            'in_wishlist': relation.in_wishlist,
+            'rating': relation.rating,
+        }
+        actual_data = BookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data
+        self.assertEqual(expected_data, actual_data)
+
+    def test_expanded_book_serializer(self):
+        CategoryFactory.create_batch(3)
+        AuthorFactory.create()
+        user = UserFactory.create()
+        book = BookFactory.create()
+        relation = UserBookRelationFactory.create(user=user, book=book)
+        expected_data = {
+            'id': book.id,
+            'title': book.title,
+            'title_original': book.title_original,
+            'year_published': book.year_published,
+            'description': book.description,
+            'author': AuthorSerializer(book.author).data,
+            'categories': CategorySerializer(book.categories.all(), many=True).data,
+            'in_bookmarks': relation.in_bookmarks,
+            'in_wishlist': relation.in_wishlist,
+            'rating': relation.rating,
+        }
+        actual_data = ExpandedBookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data
+        self.assertEqual(expected_data, actual_data)
+
+    def test_author_serializer(self):
+        author = AuthorFactory.create()
+        expected_data = {
+            'id': author.id,
+            'name': author.name,
+            'family_name': author.family_name,
+            'full_name': author.full_name,
+            'about': author.about
+        }
+        actual_data = AuthorSerializer(author).data
+        self.assertEqual(expected_data, actual_data)
+
+    def test_category_serializer(self):
+        category = CategoryFactory.create()
+        expected_data = {
+            'id': category.id,
+            'name': category.name,
+            'description': category.description,
+        }
+        actual_data = CategorySerializer(category).data
+        self.assertEqual(expected_data, actual_data)
+
+    def test_user_book_relation_serializer(self):
+        CategoryFactory.create_batch(3)
+        AuthorFactory.create()
+        book = BookFactory.create()
+        user = UserFactory.create()
+        relation = UserBookRelationFactory.create(user=user, book=book)
+
+        expected_data = {
+            'book': book.id,
+            'in_bookmarks': relation.in_bookmarks,
+            'in_wishlist': relation.in_wishlist,
+            'rating': relation.rating,
+        }
+        actual_data = UserBookRelationSerializer(relation).data
+        self.assertEqual(expected_data, actual_data)
+
+    def test_staff_user_book_relation_serializer(self):
+        CategoryFactory.create_batch(3)
+        AuthorFactory.create()
+        book = BookFactory.create()
+        user = UserFactory.create(is_staff=True)
+        relation = UserBookRelationFactory.create(user=user, book=book)
+
+        expected_data = {
+            'id': relation.id,
+            'user': user.id,
+            'book': book.id,
+            'in_bookmarks': relation.in_bookmarks,
+            'in_wishlist': relation.in_wishlist,
+            'rating': relation.rating,
+        }
+        actual_data = StaffBookRelationSerializer(relation).data
+        self.assertEqual(expected_data, actual_data)
+
+    def test_expanded_user_book_relation_serializer(self):
+        CategoryFactory.create_batch(3)
+        AuthorFactory.create()
+        book = BookFactory.create()
+        user = UserFactory.create(is_staff=True)
+        relation = UserBookRelationFactory.create(user=user, book=book)
+
+        expected_data = {
+            'book': BookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data,
+            'in_bookmarks': relation.in_bookmarks,
+            'in_wishlist': relation.in_wishlist,
+            'rating': relation.rating,
+        }
+        actual_data = ExpandedUserBookRelationSerializer(relation,
+                                                         context=PrefetchUserData.get_extra_context(user)).data
+        self.assertEqual(expected_data, actual_data)
