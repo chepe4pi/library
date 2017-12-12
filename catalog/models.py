@@ -74,11 +74,11 @@ class Book(models.Model):
     isbn = models.CharField(max_length=17, blank=True, null=True, verbose_name='ISBN')
     cover_type = models.PositiveSmallIntegerField(choices=COVER_TYPE_CHOICES, blank=True, null=True,
                                                   verbose_name='Тип обложки')
-    price_original = models.DecimalField(max_digits=6, decimal_places=2, default=0,
+    price_original = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True,
                                          verbose_name='Цена без учета скидки')
-    discount = models.DecimalField(max_digits=5, decimal_places=2, default=0,
+    discount = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True,
                                    verbose_name='Скидка в процентах')
-    price = models.DecimalField(max_digits=6, decimal_places=2, default=0, verbose_name='Итоговая цена')
+    price = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True, verbose_name='Итоговая цена')
 
     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='books', verbose_name='Автор')
     publisher = models.ForeignKey(Publisher, on_delete=models.SET_NULL, related_name='books', blank=True, null=True,
