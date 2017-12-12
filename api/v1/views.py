@@ -7,7 +7,6 @@ from .filter_backends import StaffAccessFilter, UserBookRelationFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from .mixins.views import ExpandableViewSetMixin, PrefetchUserData, StaffViewSetMixin
 from catalog.models import UserBookRelation
-from django.db.models.aggregates import Avg, Count
 
 
 class AuthorViewSet(viewsets.ModelViewSet):
@@ -22,7 +21,7 @@ class BookViewSet(ExpandableViewSetMixin, PrefetchUserData, viewsets.ModelViewSe
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.annotate(book_average_price=Avg('books__price'), book_count=Count('books'))
+    queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 

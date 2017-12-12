@@ -8,7 +8,7 @@ from ..mixins.views import PrefetchUserData
 from api.v1.serializers import BookSerializer, UserBookRelationSerializer, StaffBookRelationSerializer, \
     AuthorSerializer, CategorySerializer, ExpandedUserBookRelationSerializer, ExpandedBookSerializer
 import status, pdb, random
-from collections import OrderedDict
+from catalog.logic import book_total_discount, book_price_with_discount
 
 User = get_user_model()
 
@@ -40,7 +40,7 @@ class BooksEndpointTestCase(APITestCase):
         )
 
     def test_book_detail_load(self):
-        book = random.choice(self.books)
+        book = Book.objects.first()
         response = self.client.get(reverse('api:v1:book-detail', args=(book.id,)))
         self.assertEqual(response.status_code, status.HTTP_200_OK, "Book detail failed to load")
         self.assertEqual(
@@ -67,7 +67,9 @@ class BooksEndpointTestCase(APITestCase):
 
     def test_book_create_user_admin(self):
         self.client.force_authenticate(user=self.admin)
-        book_data = self.get_serializer(BookFactory.build(), self.admin).data
+        new_book = BookFactory.build()
+        new_book.price = book_price_with_discount(new_book)
+        book_data = self.get_serializer(new_book, self.admin).data
         response = self.client.post(reverse('api:v1:book-list'), book_data)
         self.assertEqual(
             response.status_code, status.HTTP_201_CREATED,
@@ -152,8 +154,9 @@ class BooksEndpointTestCase(APITestCase):
             response.status_code, status.HTTP_200_OK,
             "Attempting to access expanded books list should return 200 OK"
         )
+        actual_data = response.json()['results']
         self.assertEqual(
-            response.json()['results'], expected_data,
+            actual_data, expected_data,
             "Data mismatch for expanded list"
         )
 
@@ -655,6 +658,8 @@ class CategoriesEndpointTestCase(APITestCase):
         self.client.force_authenticate(user=self.admin)
         new_category = CategoryFactory.build()
         category_data = self.get_serializer(new_category).data
+        category_data['book_average_price'] = None
+        category_data['book_count'] = 0
         response = self.client.post(reverse('api:v1:category-list'), category_data)
         self.assertEqual(
             response.status_code, status.HTTP_201_CREATED,
@@ -748,6 +753,10 @@ class SerializersTestCase(TestCase):
             'in_bookmarks': relation.in_bookmarks,
             'in_wishlist': relation.in_wishlist,
             'rating': relation.rating,
+            'price_original': str(book.price_original),
+            'price': "%.2f" % book.price,
+            'discount': str(book.discount),
+            'discount_total': str(book_total_discount(book)),
         }
         actual_data = BookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data
         self.assertEqual(expected_data, actual_data)
@@ -769,6 +778,10 @@ class SerializersTestCase(TestCase):
             'in_bookmarks': relation.in_bookmarks,
             'in_wishlist': relation.in_wishlist,
             'rating': relation.rating,
+            'price_original': str(book.price_original),
+            'price': "%.2f" % book.price,
+            'discount': str(book.discount),
+            'discount_total': str(book_total_discount(book)),
         }
         actual_data = ExpandedBookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data
         self.assertEqual(expected_data, actual_data)

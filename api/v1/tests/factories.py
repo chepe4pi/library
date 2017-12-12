@@ -38,6 +38,8 @@ class BookFactory(DjangoModelFactory):
     title = Faker('word')
     title_original = Faker('word')
     author = factory.Iterator(Author.objects.all())
+    price_original = Faker('pydecimal', left_digits=2, right_digits=2, positive=True)
+    discount = Faker('pydecimal', left_digits=2, right_digits=2, positive=True)
 
     @factory.post_generation
     def categories(self, create, extracted, **kwargs):

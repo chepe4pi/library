@@ -10,8 +10,8 @@ class AuthorSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    book_average_price = serializers.DecimalField(max_digits=6, decimal_places=2)
-    book_count = serializers.IntegerField()
+    book_average_price = serializers.DecimalField(max_digits=6, decimal_places=2, read_only=True)
+    book_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Category
@@ -22,13 +22,13 @@ class BookSerializer(serializers.ModelSerializer):
     in_bookmarks = serializers.SerializerMethodField()
     in_wishlist = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
-    discount = serializers.SerializerMethodField()
+    discount_total = serializers.SerializerMethodField()
 
     class Meta:
         model = Book
         fields = (
             'id', 'title', 'title_original', 'year_published', 'description', 'author', 'categories', 'in_bookmarks',
-            'rating', 'in_wishlist', 'price', 'discount', 'price_original'
+            'rating', 'in_wishlist', 'price', 'discount', 'discount_total', 'price_original'
         )
 
     def get_relation(self, book):
@@ -51,8 +51,8 @@ class BookSerializer(serializers.ModelSerializer):
         relation = self.get_relation(book)
         return relation['in_wishlist'] if relation else False
 
-    def get_discount(self, book):
-        return catalog_logic.book_total_discount(book)
+    def get_discount_total(self, book):
+        return "%.2f" %catalog_logic.book_total_discount(book)
 
 
 class ExpandedBookSerializer(BookSerializer):

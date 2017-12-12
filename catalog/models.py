@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from . import logic
 from django.forms import ValidationError
+from django.db.models.aggregates import Avg, Count
 
 UserModel = get_user_model()
 
@@ -35,9 +36,16 @@ class Publisher(models.Model):
         return self.name
 
 
+class CategoryManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().annotate(book_average_price=Avg('books__price'), book_count=Count('books'))
+
+
 class Category(models.Model):
     name = models.CharField(max_length=255, verbose_name='Название')
     description = models.TextField(blank=True, null=True, verbose_name='Описание')
+
+    objects = CategoryManager()
 
     class Meta:
         verbose_name = 'категория'
