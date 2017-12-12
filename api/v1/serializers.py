@@ -19,9 +19,7 @@ class BookSerializer(serializers.ModelSerializer):
     in_bookmarks = serializers.SerializerMethodField()
     in_wishlist = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
-    price = serializers.SerializerMethodField()
     discount = serializers.SerializerMethodField()
-    price_original = serializers.FloatField(source='price')
 
     class Meta:
         model = Book
@@ -49,9 +47,6 @@ class BookSerializer(serializers.ModelSerializer):
     def get_in_wishlist(self, book):
         relation = self.get_relation(book)
         return relation['in_wishlist'] if relation else False
-
-    def get_price(self, book):
-        return catalog_logic.book_price_with_discount(book)
 
     def get_discount(self, book):
         return catalog_logic.book_total_discount(book)
