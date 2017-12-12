@@ -74,3 +74,7 @@ class ExpandedUserBookRelationSerializer(UserBookRelationSerializer):
 
 class StaffBookRelationSerializer(UserBookRelationSerializer):
     user = serializers.PrimaryKeyRelatedField
+
+    class Meta:
+        model = UserBookRelation
+        fields = ('id', 'user', 'book', 'in_wishlist', 'in_bookmarks', 'rating')
