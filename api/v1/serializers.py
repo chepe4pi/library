@@ -10,9 +10,12 @@ class AuthorSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    book_average_price = serializers.DecimalField(max_digits=6, decimal_places=2)
+    book_count = serializers.IntegerField()
+
     class Meta:
         model = Category
-        fields = ('id', 'name', 'description')
+        fields = ('id', 'name', 'description', 'book_average_price', 'book_count')
 
 
 class BookSerializer(serializers.ModelSerializer):
