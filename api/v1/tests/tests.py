@@ -312,8 +312,10 @@ class UserBookRelationsEndpointTestCase(APITestCase):
             response.status_code, status.HTTP_201_CREATED,
             "Attempting to create an own book relation as admin should return 201 Created"
         )
+        actual_data = response.json()
+        relation_saved = UserBookRelation.objects.get(id=actual_data['id'])
         self.assertEqual(
-            response.json(), self.get_serializer(new_relation, user=self.admin).data,
+            actual_data, self.get_serializer(data=relation_saved, user=self.admin).data,
             "Data mismatch for newly created book relation"
         )
 
@@ -329,8 +331,10 @@ class UserBookRelationsEndpointTestCase(APITestCase):
             response.status_code, status.HTTP_201_CREATED,
             "Attempting to create an other user's relation as admin should return 201 Created"
         )
+        actual_data = response.json()
+        relation_created = UserBookRelation.objects.get(id=actual_data['id'])
         self.assertEqual(
-            response.json(), self.get_serializer(new_relation, user=self.admin).data,
+            response.json(), self.get_serializer(relation_created, user=self.admin).data,
             "Data mismatch for newly created book relation"
         )
 
@@ -624,12 +628,12 @@ class CategoriesEndpointTestCase(APITestCase):
         response = self.client.get(reverse('api:v1:category-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK, "Category list failed to load")
         self.assertEqual(
-            response.json()['results'], self.get_serializer(self.categories, many=True).data,
+            response.json()['results'], self.get_serializer(Category.objects.all(), many=True).data,
             "Data mismatch in category list"
         )
 
     def test_category_detail_load(self):
-        category = random.choice(self.categories)
+        category = Category.objects.order_by('?').first()
         response = self.client.get(reverse('api:v1:category-detail', args=(category.id,)))
         self.assertEqual(response.status_code, status.HTTP_200_OK, "Book detail failed to load")
         self.assertEqual(
@@ -755,8 +759,8 @@ class SerializersTestCase(TestCase):
             'rating': relation.rating,
             'price_original': str(book.price_original),
             'price': "%.2f" % book.price,
-            'discount': str(book.discount),
-            'discount_total': str(book_total_discount(book)),
+            'discount': "%.2f" % book.discount,
+            'discount_total': "%.2f" % book_total_discount(book),
         }
         actual_data = BookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data
         self.assertEqual(expected_data, actual_data)
