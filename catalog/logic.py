@@ -5,7 +5,8 @@ from decimal import Decimal
 def in_bookmarks(book, user):
     if isinstance(user, AnonymousUser):
         return False
-    return bool(book.bookmarks.filter(user=user).first())
+    relation = book.userbookrelations.filter(user=user).first()
+    return getattr(relation, 'in_bookmarks', False)
 
 
 def book_total_discount(book):

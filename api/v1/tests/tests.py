@@ -31,6 +31,12 @@ class BooksEndpointTestCase(APITestCase):
         kwargs["context"].update(PrefetchUserData.get_extra_context(user))
         return BookSerializer(data, **kwargs)
 
+    def test_book_prefetch_user_data(self):
+        books = Book.objects.all()
+        with self.assertRaises(NotImplementedError) as cm:
+            data = BookSerializer(books, many=True).data
+
+
     def test_book_list_load(self):
         response = self.client.get(reverse('api:v1:book-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK, "Book list failed to load")
@@ -782,10 +788,10 @@ class SerializersTestCase(TestCase):
             'in_bookmarks': relation.in_bookmarks,
             'in_wishlist': relation.in_wishlist,
             'rating': relation.rating,
-            'price_original': str(book.price_original),
+            'price_original': "%.2f" % book.price_original,
             'price': "%.2f" % book.price,
-            'discount': str(book.discount),
-            'discount_total': str(book_total_discount(book)),
+            'discount': "%.2f" % book.discount,
+            'discount_total': "%.2f" % book_total_discount(book),
         }
         actual_data = ExpandedBookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data
         self.assertEqual(expected_data, actual_data)
