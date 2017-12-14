@@ -1,7 +1,7 @@
 from django.test import TestCase
 from . import logic
 from django.contrib.auth.models import AnonymousUser
-from .models import Book, DiscountGroup
+from .models import Book, DiscountGroup, Category
 from api.v1.tests import factories
 from django.contrib.auth import get_user_model
 
@@ -68,3 +68,33 @@ class LogicTestCase(TestCase):
         discount_group.save()
         book.refresh_from_db()
         self.assertEqual(500, book.price)
+        book.discount = 0
+        book.save()
+        self.assertEqual(700, book.price)
+
+    def test_category_book_stats(self):
+        category = factories.CategoryFactory.create()
+        factories.BookFactory.create(price_original=20, discount=0, categories=(category,))
+        factories.BookFactory.create(price_original=40, discount=0, categories=(category,))
+        factories.BookFactory.create(price_original=60, discount=0, categories=(category,))
+        category = Category.objects.get(id=category.id)
+        self.assertEqual(3, category.book_count)
+        self.assertEqual(40, category.book_average_price)
+
+    def test_category_book_stats_with_none(self):
+        category = factories.CategoryFactory.create()
+        factories.BookFactory.create(price_original=None, discount=0, categories=(category,))
+        factories.BookFactory.create(price_original=100, discount=0, categories=(category,))
+        factories.BookFactory.create(price_original=50, discount=0, categories=(category,))
+        category = Category.objects.get(id=category.id)
+        self.assertEqual(3, category.book_count)
+        self.assertEqual(75, category.book_average_price)
+
+    def test_category_book_stats_with_zero(self):
+        category = factories.CategoryFactory.create()
+        factories.BookFactory.create(price_original=0, discount=0, categories=(category,))
+        factories.BookFactory.create(price_original=100, discount=0, categories=(category,))
+        factories.BookFactory.create(price_original=50, discount=0, categories=(category,))
+        category = Category.objects.get(id=category.id)
+        self.assertEqual(3, category.book_count)
+        self.assertEqual(50, category.book_average_price)

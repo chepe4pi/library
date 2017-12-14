@@ -108,10 +108,6 @@ class Book(models.Model):
     def __str__(self):
         return self.title
 
-    def clean(self):
-        if self.price_original == 0:
-            raise ValidationError({'price_original': 'Цена без учета скидки не может быть равной нулю'})
-
     def save(self, *args, **kwargs):
         self.price = logic.book_price_with_discount(self)
         return super().save()
