@@ -763,12 +763,14 @@ class SerializersTestCase(TestCase):
             'in_bookmarks': relation.in_bookmarks,
             'in_wishlist': relation.in_wishlist,
             'rating': relation.rating,
-            'price_original': str(book.price_original),
-            'price': "%.2f" % book.price,
-            'discount': "%.2f" % book.discount,
-            'discount_total': "%.2f" % book_total_discount(book),
+            'price_original': "{:.2f}".format(book.price_original),
+            'price': "{:.2f}".format(book.price),
+            'discount': "{:.2f}".format(book.discount),
+            'discount_total': "{:.2f}".format(book_total_discount(book)),
         }
         actual_data = BookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data
+        print(expected_data)
+        print(actual_data)
         self.assertEqual(expected_data, actual_data)
 
     def test_expanded_book_serializer(self):
@@ -788,10 +790,10 @@ class SerializersTestCase(TestCase):
             'in_bookmarks': relation.in_bookmarks,
             'in_wishlist': relation.in_wishlist,
             'rating': relation.rating,
-            'price_original': "%.2f" % book.price_original,
-            'price': "%.2f" % book.price,
-            'discount': "%.2f" % book.discount,
-            'discount_total': "%.2f" % book_total_discount(book),
+            'price_original': "{:.2f}".format(book.price_original),
+            'price': "{:.2f}".format(book.price),
+            'discount': "{:.2f}".format(book.discount),
+            'discount_total': "{:.2f}".format(book_total_discount(book)),
         }
         actual_data = ExpandedBookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data
         self.assertEqual(expected_data, actual_data)

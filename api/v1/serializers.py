@@ -52,7 +52,7 @@ class BookSerializer(serializers.ModelSerializer):
         return relation['in_wishlist'] if relation else False
 
     def get_discount_total(self, book):
-        return "%.2f" %catalog_logic.book_total_discount(book)
+        return "{:.2f}".format(catalog_logic.book_total_discount(book))
 
 
 class ExpandedBookSerializer(BookSerializer):

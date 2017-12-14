@@ -21,7 +21,7 @@ class Author(models.Model):
 
     @property
     def full_name(self):
-        return "%s %s" % (self.name, self.family_name)
+        return "{} {}".format(self.name, self.family_name)
 
 
 class Publisher(models.Model):
