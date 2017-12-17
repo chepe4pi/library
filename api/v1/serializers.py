@@ -22,7 +22,8 @@ class BookSerializer(serializers.ModelSerializer):
     in_bookmarks = serializers.SerializerMethodField()
     in_wishlist = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
-    discount_total = serializers.SerializerMethodField()
+    discount_total = serializers.DecimalField(max_digits=6, decimal_places=2, read_only=True)
+    price = serializers.DecimalField(max_digits=6, decimal_places=2, read_only=True)
 
     class Meta:
         model = Book
@@ -50,9 +51,6 @@ class BookSerializer(serializers.ModelSerializer):
     def get_in_wishlist(self, book):
         relation = self.get_relation(book)
         return relation['in_wishlist'] if relation else False
-
-    def get_discount_total(self, book):
-        return "{:.2f}".format(catalog_logic.book_total_discount(book))
 
 
 class ExpandedBookSerializer(BookSerializer):

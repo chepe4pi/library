@@ -56,6 +56,7 @@ class LogicTestCase(TestCase):
 
     def test_book_price_recalculation(self):
         book = factories.BookFactory.create(discount=10, price_original=1000)
+        book = Book.objects.get(id=book.id)
         self.assertEqual(900, book.price)
         book.discount = 20
         book.save()
@@ -66,7 +67,7 @@ class LogicTestCase(TestCase):
         self.assertEqual(600, book.price)
         discount_group.discount = 30
         discount_group.save()
-        book.refresh_from_db()
+        book = Book.objects.get(id=book.id)
         self.assertEqual(500, book.price)
         book.discount = 0
         book.save()

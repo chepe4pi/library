@@ -15,7 +15,7 @@ class AuthorViewSet(viewsets.ModelViewSet):
 
 
 class BookViewSet(ExpandableViewSetMixin, PrefetchUserData, viewsets.ModelViewSet):
-    queryset = Book.objects.select_related('author').prefetch_related('categories')
+    queryset = Book.objects.select_related('author')
     serializer_class = BookSerializer
     serializer_expanded_class = ExpandedBookSerializer
 
