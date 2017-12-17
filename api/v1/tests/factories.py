@@ -4,6 +4,7 @@ from catalog.models import Book, Author, Category, UserBookRelation
 from factory import Faker
 import random
 from django.contrib.auth import get_user_model
+from collections.abc import Iterable
 
 User = get_user_model()
 
@@ -38,6 +39,8 @@ class BookFactory(DjangoModelFactory):
     title = Faker('word')
     title_original = Faker('word')
     author = factory.Iterator(Author.objects.all())
+    price_original = Faker('pydecimal', left_digits=2, right_digits=2, positive=True)
+    discount = Faker('pydecimal', left_digits=2, right_digits=2, positive=True)
 
     @factory.post_generation
     def categories(self, create, extracted, **kwargs):
@@ -46,7 +49,8 @@ class BookFactory(DjangoModelFactory):
             return
 
         if extracted:
-            self.categories.add(extracted)
+            for category in list(extracted):
+                self.categories.add(category)
             return
 
         categories = Category.objects.all()

@@ -14,6 +14,7 @@ class BookAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'author', 'publisher')
     list_display_links = ('id', 'title')
     search_fields = ('id', 'title', 'title_original', 'isbn', 'author__name', 'author__family_name', 'publisher__name')
+    readonly_fields = ('price',)
 
 
 @admin.register(models.Category)
@@ -25,6 +26,13 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(models.Publisher)
 class PublisherAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
+    list_display_links = ('id', 'name')
+    search_fields = ('id', 'name')
+
+
+@admin.register(models.DiscountGroup)
+class DiscountGroupAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     list_display_links = ('id', 'name')
     search_fields = ('id', 'name')
