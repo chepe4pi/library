@@ -14,7 +14,6 @@ class BookAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'author', 'publisher')
     list_display_links = ('id', 'title')
     search_fields = ('id', 'title', 'title_original', 'isbn', 'author__name', 'author__family_name', 'publisher__name')
-    # readonly_fields = ('price',)
 
 
 @admin.register(models.Category)

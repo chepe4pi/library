@@ -771,15 +771,13 @@ class SerializersTestCase(TestCase):
             'discount_total': "{:.2f}".format(book_total_discount(book)),
         }
         actual_data = BookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data
-        print(expected_data)
-        print(actual_data)
         self.assertEqual(expected_data, actual_data)
 
     def test_expanded_book_serializer(self):
         CategoryFactory.create_batch(3)
-        AuthorFactory.create()
+        author = AuthorFactory.create()
         user = UserFactory.create()
-        book = BookFactory.create()
+        book = BookFactory.create(author=author)
         book = Book.objects.get(id=book.id)
         relation = UserBookRelationFactory.create(user=user, book=book)
         expected_data = {
@@ -788,7 +786,7 @@ class SerializersTestCase(TestCase):
             'title_original': book.title_original,
             'year_published': book.year_published,
             'description': book.description,
-            'author': AuthorSerializer(book.author).data,
+            'author': AuthorSerializer(author).data,
             'categories': CategorySerializer(book.categories.all(), many=True).data,
             'in_bookmarks': relation.in_bookmarks,
             'in_wishlist': relation.in_wishlist,
@@ -799,8 +797,6 @@ class SerializersTestCase(TestCase):
             'discount_total': "{:.2f}".format(book_total_discount(book)),
         }
         actual_data = ExpandedBookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data
-        print(expected_data)
-        print(actual_data)
         self.assertEqual(expected_data, actual_data)
 
     def test_author_serializer(self):
