@@ -31,29 +31,6 @@ class LogicTestCase(TestCase):
         book = Book.objects.order_by('?').first()
         self.assertFalse(logic.in_bookmarks(book, None))
 
-    def test_book_total_discount_no_group(self):
-        book = Book.objects.order_by('?').first()
-        self.assertEqual(book.discount, logic.book_total_discount(book))
-
-    def test_book_total_discount_group(self):
-        book = factories.BookFactory.create(discount=10)
-        book.discount_group = DiscountGroup(name='Discount Group', discount=20)
-        self.assertEqual(30, logic.book_total_discount(book))
-
-    def test_book_price_with_discount(self):
-        book = factories.BookFactory.create(discount=10, price_original=1000)
-        book.discount_group = DiscountGroup(name='Discount Group', discount=20)
-        self.assertEqual(700, logic.book_price_with_discount(book))
-
-    def test_book_price_with_discount_no_price(self):
-        book = factories.BookFactory.build(discount=10, price_original=None)
-        book.discount_group = DiscountGroup(name='Discount Group', discount=20)
-        self.assertEqual(None, logic.book_price_with_discount(book))
-
-    def test_book_price_with_discount_no_group(self):
-        book = factories.BookFactory.create(discount=10, price_original=1000)
-        self.assertEqual(900, logic.book_price_with_discount(book))
-
     def test_book_price_recalculation(self):
         book = factories.BookFactory.create(discount=10, price_original=1000)
         book = Book.objects.get(id=book.id)
