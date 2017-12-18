@@ -815,6 +815,8 @@ class SerializersTestCase(TestCase):
             'id': category.id,
             'name': category.name,
             'description': category.description,
+            'book_average_price': category.book_average_price,
+            'book_count': category.book_count,
         }
         actual_data = CategorySerializer(category).data
         self.assertEqual(expected_data, actual_data)
