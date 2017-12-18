@@ -811,6 +811,7 @@ class SerializersTestCase(TestCase):
 
     def test_category_serializer(self):
         category = CategoryFactory.create()
+        category = Category.objects.get(id=category.id)
         expected_data = {
             'id': category.id,
             'name': category.name,

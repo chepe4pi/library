@@ -37,10 +37,12 @@ class LogicTestCase(TestCase):
         self.assertEqual(900, book.price)
         book.discount = 20
         book.save()
+        book = Book.objects.get(id=book.id)
         self.assertEqual(800, book.price)
         discount_group = DiscountGroup.objects.create(name="DG1", discount=20)
         book.discount_group = discount_group
         book.save()
+        book = Book.objects.get(id=book.id)
         self.assertEqual(600, book.price)
         discount_group.discount = 30
         discount_group.save()
@@ -48,6 +50,7 @@ class LogicTestCase(TestCase):
         self.assertEqual(500, book.price)
         book.discount = 0
         book.save()
+        book = Book.objects.get(id=book.id)
         self.assertEqual(700, book.price)
 
     def test_category_book_stats(self):

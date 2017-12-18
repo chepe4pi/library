@@ -63,16 +63,6 @@ class Category(models.Model):
         verbose_name = 'категория'
         verbose_name_plural = 'категории'
 
-    def save(self, *args, **kwargs):
-        res = super().save(*args, **kwargs)
-        self.refresh_books_info()
-        return res
-
-    def refresh_books_info(self):
-        self_updated = Category.objects.get(id=self.id)
-        self.book_average_price = self_updated.book_average_price
-        self.book_count = self_updated.book_count
-
     def __str__(self):
         return self.name
 
@@ -136,16 +126,6 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
-
-    def save(self, *args, **kwargs):
-        res = super().save()
-        self.refresh_price_info()
-        return res
-
-    def refresh_price_info(self):
-        self_updated = Book.objects.get(id=self.id)
-        self.price = self_updated.price
-        self.discount_total = self_updated.discount_total
 
 
 class UserBookRelation(models.Model):
