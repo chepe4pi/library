@@ -2,7 +2,9 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from . import logic
 from django.forms import ValidationError
-from django.db.models.aggregates import Avg, Count
+from django.db.models.aggregates import Avg, Count, Sum
+from django.db.models.expressions import F, Value
+from django.db.models.functions import Cast, Coalesce
 
 UserModel = get_user_model()
 
@@ -38,7 +40,18 @@ class Publisher(models.Model):
 
 class CategoryManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().annotate(book_average_price=Avg('books__price'), book_count=Count('books'))
+        return super().get_queryset().annotate(
+            book_average_price=Avg(
+                Cast(
+                    F('books__price_original') - (F('books__price_original') * (
+                        Coalesce('books__discount', Value(0)) +
+                        Coalesce('books__discount_group__discount', Value(0))
+                    ) / Value(100)),
+                    models.DecimalField(max_digits=6, decimal_places=2)
+                )
+            ),
+            book_count=Count('books')
+        )
 
 
 class Category(models.Model):
@@ -73,6 +86,17 @@ class DiscountGroup(models.Model):
             book.save()
 
 
+class BookManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().annotate(
+            discount_total=Coalesce('discount', Value(0)) + Coalesce('discount_group__discount', Value(0)),
+            price=Cast(
+                F('price_original') - (F('price_original') * F('discount_total') / Value(100)),
+                models.DecimalField(max_digits=6, decimal_places=2)
+            )
+        )
+
+
 class Book(models.Model):
     COVER_TYPE_HARDBACK = 0
     COVER_TYPE_PAPERBACK = 1
@@ -92,7 +116,6 @@ class Book(models.Model):
                                          verbose_name='Цена без учета скидки')
     discount = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True,
                                    verbose_name='Скидка в процентах')
-    price = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True, verbose_name='Итоговая цена')
 
     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='books', verbose_name='Автор')
     publisher = models.ForeignKey(Publisher, on_delete=models.SET_NULL, related_name='books', blank=True, null=True,
@@ -100,6 +123,8 @@ class Book(models.Model):
     categories = models.ManyToManyField(Category, blank=True, related_name='books', verbose_name='Категории')
     discount_group = models.ForeignKey(DiscountGroup, on_delete=models.SET_NULL, related_name='books', blank=True,
                                        null=True, verbose_name='Группа скидок')
+
+    objects = BookManager()
 
     class Meta:
         verbose_name = 'книга'
@@ -109,8 +134,9 @@ class Book(models.Model):
         return self.title
 
     def save(self, *args, **kwargs):
+        res = super().save()
         self.price = logic.book_price_with_discount(self)
-        return super().save()
+        return res
 
 
 class UserBookRelation(models.Model):

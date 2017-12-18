@@ -41,7 +41,7 @@ class BooksEndpointTestCase(APITestCase):
         response = self.client.get(reverse('api:v1:book-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK, "Book list failed to load")
         self.assertEqual(
-            response.json()['results'], self.get_serializer(self.books, many=True).data,
+            response.json()['results'], self.get_serializer(Book.objects.all(), many=True).data,
             "Data mismatch in book list"
         )
 
@@ -75,6 +75,7 @@ class BooksEndpointTestCase(APITestCase):
         self.client.force_authenticate(user=self.admin)
         new_book = BookFactory.build()
         new_book.price = book_price_with_discount(new_book)
+        new_book.discount_total = book_total_discount(new_book)
         book_data = self.get_serializer(new_book, self.admin).data
         response = self.client.post(reverse('api:v1:book-list'), book_data)
         self.assertEqual(
@@ -751,6 +752,7 @@ class SerializersTestCase(TestCase):
         AuthorFactory.create()
         user = UserFactory.create()
         book = BookFactory.create()
+        book = Book.objects.get(id=book.id)
         relation = UserBookRelationFactory.create(user=user, book=book)
         expected_data = {
             'id': book.id,
@@ -769,15 +771,14 @@ class SerializersTestCase(TestCase):
             'discount_total': "{:.2f}".format(book_total_discount(book)),
         }
         actual_data = BookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data
-        print(expected_data)
-        print(actual_data)
         self.assertEqual(expected_data, actual_data)
 
     def test_expanded_book_serializer(self):
         CategoryFactory.create_batch(3)
-        AuthorFactory.create()
+        author = AuthorFactory.create()
         user = UserFactory.create()
-        book = BookFactory.create()
+        book = BookFactory.create(author=author)
+        book = Book.objects.get(id=book.id)
         relation = UserBookRelationFactory.create(user=user, book=book)
         expected_data = {
             'id': book.id,
@@ -785,7 +786,7 @@ class SerializersTestCase(TestCase):
             'title_original': book.title_original,
             'year_published': book.year_published,
             'description': book.description,
-            'author': AuthorSerializer(book.author).data,
+            'author': AuthorSerializer(author).data,
             'categories': CategorySerializer(book.categories.all(), many=True).data,
             'in_bookmarks': relation.in_bookmarks,
             'in_wishlist': relation.in_wishlist,

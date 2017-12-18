@@ -5,8 +5,11 @@ from catalog.models import UserBookRelation
 class ExpandableViewSetMixin(viewsets.GenericViewSet):
     serializer_expanded_class = None
 
+    def should_expand(self):
+        return self.request.GET.get('expand', False)
+
     def get_serializer_class(self):
-        if self.request.GET.get('expand', False):
+        if self.should_expand():
             return self.serializer_expanded_class
         return super().get_serializer_class()
 
