@@ -8,7 +8,6 @@ from ..mixins.views import PrefetchUserData
 from api.v1.serializers import BookSerializer, UserBookRelationSerializer, StaffBookRelationSerializer, \
     AuthorSerializer, CategorySerializer, ExpandedUserBookRelationSerializer, ExpandedBookSerializer
 import status, pdb, random
-from catalog.logic import book_total_discount, book_price_with_discount
 
 User = get_user_model()
 
@@ -35,7 +34,6 @@ class BooksEndpointTestCase(APITestCase):
         books = Book.objects.all()
         with self.assertRaises(NotImplementedError) as cm:
             data = BookSerializer(books, many=True).data
-
 
     def test_book_list_load(self):
         response = self.client.get(reverse('api:v1:book-list'))
@@ -73,9 +71,9 @@ class BooksEndpointTestCase(APITestCase):
 
     def test_book_create_user_admin(self):
         self.client.force_authenticate(user=self.admin)
-        new_book = BookFactory.build()
-        new_book.price = book_price_with_discount(new_book)
-        new_book.discount_total = book_total_discount(new_book)
+        new_book = BookFactory.build(price_original=1000, discount=25)
+        new_book.price = 750
+        new_book.discount_total = 25
         book_data = self.get_serializer(new_book, self.admin).data
         response = self.client.post(reverse('api:v1:book-list'), book_data)
         self.assertEqual(
@@ -768,7 +766,7 @@ class SerializersTestCase(TestCase):
             'price_original': "{:.2f}".format(book.price_original),
             'price': "{:.2f}".format(book.price),
             'discount': "{:.2f}".format(book.discount),
-            'discount_total': "{:.2f}".format(book_total_discount(book)),
+            'discount_total': "{:.2f}".format(book.discount_total),
         }
         actual_data = BookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data
         self.assertEqual(expected_data, actual_data)
@@ -794,7 +792,7 @@ class SerializersTestCase(TestCase):
             'price_original': "{:.2f}".format(book.price_original),
             'price': "{:.2f}".format(book.price),
             'discount': "{:.2f}".format(book.discount),
-            'discount_total': "{:.2f}".format(book_total_discount(book)),
+            'discount_total': "{:.2f}".format(book.discount_total),
         }
         actual_data = ExpandedBookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data
         self.assertEqual(expected_data, actual_data)
@@ -813,10 +811,13 @@ class SerializersTestCase(TestCase):
 
     def test_category_serializer(self):
         category = CategoryFactory.create()
+        category = Category.objects.get(id=category.id)
         expected_data = {
             'id': category.id,
             'name': category.name,
             'description': category.description,
+            'book_average_price': category.book_average_price,
+            'book_count': category.book_count,
         }
         actual_data = CategorySerializer(category).data
         self.assertEqual(expected_data, actual_data)

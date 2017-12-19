@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from . import logic
 from django.forms import ValidationError
 from django.db.models.aggregates import Avg, Count, Sum
 from django.db.models.expressions import F, Value
@@ -80,11 +79,6 @@ class DiscountGroup(models.Model):
     def __str__(self):
         return self.name
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        for book in self.books.all():
-            book.save()
-
 
 class BookManager(models.Manager):
     def get_queryset(self):
@@ -132,11 +126,6 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
-
-    def save(self, *args, **kwargs):
-        res = super().save()
-        self.price = logic.book_price_with_discount(self)
-        return res
 
 
 class UserBookRelation(models.Model):
