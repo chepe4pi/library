@@ -56,8 +56,9 @@ class CategoryManager(models.Manager):
 class Category(models.Model):
     name = models.CharField(max_length=255, verbose_name='Название')
     description = models.TextField(blank=True, null=True, verbose_name='Описание')
-
-    objects = CategoryManager()
+    book_average_price = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True,
+                                             verbose_name='Средняя цена книги в категории')
+    book_count = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name='Количество книг в категории')
 
     class Meta:
         verbose_name = 'категория'
@@ -83,11 +84,11 @@ class DiscountGroup(models.Model):
 class BookManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().annotate(
-            discount_total=Coalesce('discount', Value(0)) + Coalesce('discount_group__discount', Value(0)),
-            price=Cast(
-                F('price_original') - (F('price_original') * F('discount_total') / Value(100)),
-                models.DecimalField(max_digits=6, decimal_places=2)
-            )
+            # discount_total=Coalesce('discount', Value(0)) + Coalesce('discount_group__discount', Value(0)),
+            # price=Cast(
+            #     F('price_original') - (F('price_original') * F('discount_total') / Value(100)),
+            #     models.DecimalField(max_digits=6, decimal_places=2)
+            # )
         )
 
 
@@ -110,6 +111,10 @@ class Book(models.Model):
                                          verbose_name='Цена без учета скидки')
     discount = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True,
                                    verbose_name='Скидка в процентах')
+    price = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True,
+                                verbose_name='Цена')
+    discount_total = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True,
+                                         verbose_name='Полная скидка в процентах')
 
     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='books', verbose_name='Автор')
     publisher = models.ForeignKey(Publisher, on_delete=models.SET_NULL, related_name='books', blank=True, null=True,
@@ -117,8 +122,6 @@ class Book(models.Model):
     categories = models.ManyToManyField(Category, blank=True, related_name='books', verbose_name='Категории')
     discount_group = models.ForeignKey(DiscountGroup, on_delete=models.SET_NULL, related_name='books', blank=True,
                                        null=True, verbose_name='Группа скидок')
-
-    objects = BookManager()
 
     class Meta:
         verbose_name = 'книга'
