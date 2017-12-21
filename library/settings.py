@@ -135,6 +135,13 @@ REST_FRAMEWORK = {
     'TEST_REQUEST_DEFAULT_FORMAT': 'json'
 }
 
+CELERY_BEAT_SCHEDULE = {
+    'debug-task': {
+        'task': 'debug-task',
+        'schedule': 10.0,
+    },
+}
+
 INTERNAL_IPS = [
     '127.0.0.1'
 ]

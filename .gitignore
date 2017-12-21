@@ -5,3 +5,5 @@
 *.pyc
 /static
 /media
+*.db
+*.rdb
