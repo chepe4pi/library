@@ -8,7 +8,6 @@ from django.db.models import DecimalField
 
 @shared_task
 def update_book_aggregates(book_id):
-    print('updating book instance {}'.format(book_id))
     data = Book.objects.filter(id=book_id).select_related('discount_group').annotate(
         discount_total_new=Coalesce('discount', Value(0)) + Coalesce('discount_group__discount', Value(0)),
         price_new=Cast(
@@ -25,14 +24,12 @@ def update_book_aggregates(book_id):
 
 @shared_task
 def update_book_categories(book_id, categories_ids):
-    print('updating categories {} for book instance {}'.format(categories_ids, book_id))
     for category_id in categories_ids:
         update_book_category_aggregates.apply_async(args=(category_id,))
 
 
 @shared_task
 def update_book_category_aggregates(category_id):
-    print('updating category {}'.format(category_id))
     data = Category.objects.filter(id=category_id).annotate(
         book_average_price_new=Avg(
             Cast(

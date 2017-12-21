@@ -8,6 +8,7 @@ from ..mixins.views import PrefetchUserData
 from api.v1.serializers import BookSerializer, UserBookRelationSerializer, StaffBookRelationSerializer, \
     AuthorSerializer, CategorySerializer, ExpandedUserBookRelationSerializer, ExpandedBookSerializer
 import status, pdb, random
+from django.test import override_settings
 
 User = get_user_model()
 
@@ -69,6 +70,7 @@ class BooksEndpointTestCase(APITestCase):
             "Attempting to create a book as regular user should return 403 Forbidden"
         )
 
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
     def test_book_create_user_admin(self):
         self.client.force_authenticate(user=self.admin)
         new_book = BookFactory.build(price_original=1000, discount=25)
@@ -663,6 +665,7 @@ class CategoriesEndpointTestCase(APITestCase):
             "Attempting to create a category as regular user should return 403 Forbidden"
         )
 
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
     def test_category_create_user_admin(self):
         self.client.force_authenticate(user=self.admin)
         new_category = CategoryFactory.build()
@@ -677,6 +680,8 @@ class CategoriesEndpointTestCase(APITestCase):
         new_id = response.json()['id']
         expected_data = self.get_serializer(Category.objects.get(id=new_id)).data
         expected_data['id'] = None
+        print(category_data)
+        print(expected_data)
         self.assertEqual(
             category_data, expected_data,
             "Data mismatch in newly created category"
@@ -745,6 +750,7 @@ class CategoriesEndpointTestCase(APITestCase):
 
 
 class SerializersTestCase(TestCase):
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
     def test_book_serializer(self):
         CategoryFactory.create_batch(3)
         AuthorFactory.create()
@@ -771,6 +777,7 @@ class SerializersTestCase(TestCase):
         actual_data = BookSerializer(book, context=PrefetchUserData.get_extra_context(user)).data
         self.assertEqual(expected_data, actual_data)
 
+    @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
     def test_expanded_book_serializer(self):
         CategoryFactory.create_batch(3)
         author = AuthorFactory.create()
