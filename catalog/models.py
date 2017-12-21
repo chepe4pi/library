@@ -37,22 +37,6 @@ class Publisher(models.Model):
         return self.name
 
 
-class CategoryManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().annotate(
-            book_average_price=Avg(
-                Cast(
-                    F('books__price_original') - (F('books__price_original') * (
-                        Coalesce('books__discount', Value(0)) +
-                        Coalesce('books__discount_group__discount', Value(0))
-                    ) / Value(100)),
-                    models.DecimalField(max_digits=6, decimal_places=2)
-                )
-            ),
-            book_count=Count('books')
-        )
-
-
 class Category(models.Model):
     name = models.CharField(max_length=255, verbose_name='Название')
     description = models.TextField(blank=True, null=True, verbose_name='Описание')
@@ -79,17 +63,6 @@ class DiscountGroup(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class BookManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().annotate(
-            # discount_total=Coalesce('discount', Value(0)) + Coalesce('discount_group__discount', Value(0)),
-            # price=Cast(
-            #     F('price_original') - (F('price_original') * F('discount_total') / Value(100)),
-            #     models.DecimalField(max_digits=6, decimal_places=2)
-            # )
-        )
 
 
 class Book(models.Model):
