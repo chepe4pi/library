@@ -24,11 +24,10 @@ def update_book_aggregates(book_id):
 
 
 @shared_task
-def update_book_categories(book_id):
-    print('updating categories for book instance {}'.format(book_id))
-    book = Book.objects.filter(id=book_id).prefetch_related('categories').first()
-    for category in book.categories.all():
-        update_book_category_aggregates.apply_async(args=(category.id,))
+def update_book_categories(book_id, categories_ids):
+    print('updating categories {} for book instance {}'.format(categories_ids, book_id))
+    for category_id in categories_ids:
+        update_book_category_aggregates.apply_async(args=(category_id,))
 
 
 @shared_task
