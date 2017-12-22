@@ -15,10 +15,11 @@ def update_book_aggregates(book_id):
             DecimalField(max_digits=6, decimal_places=2)
         )
     ).first()
-    Book.objects.filter(id=book_id).update(
-        discount_total=data.discount_total_new,
-        price=data.price_new,
-    )
+    if data:
+        Book.objects.filter(id=book_id).update(
+            discount_total=data.discount_total_new,
+            price=data.price_new,
+        )
     return book_id
 
 
@@ -26,6 +27,7 @@ def update_book_aggregates(book_id):
 def update_book_categories(book_id, categories_ids):
     for category_id in categories_ids:
         update_book_category_aggregates.apply_async(args=(category_id,))
+    return True
 
 
 @shared_task
@@ -42,7 +44,8 @@ def update_book_category_aggregates(category_id):
         ),
         book_count_new=Count('books')
     ).first()
-    Category.objects.filter(id=category_id).update(
-        book_average_price=data.book_average_price_new,
-        book_count=data.book_count_new,
-    )
+    if data:
+        Category.objects.filter(id=category_id).update(
+            book_average_price=data.book_average_price_new,
+            book_count=data.book_count_new,
+        )

@@ -4,21 +4,23 @@ from . import tasks
 from .models import Book, Category, DiscountGroup
 
 
-@receiver(post_save, sender=Book)
+# @receiver(post_save, sender=Book)
 def book_post_save(sender, instance, **kwargs):
     categories_ids = [c.id for c in instance.categories.all()]
-    tasks.update_book_aggregates.apply_async(
+    res = tasks.update_book_aggregates.apply_async(
         args=(instance.id,),
         link=tasks.update_book_categories.s(categories_ids)
     )
+    return res.get()
 
 
-@receiver(post_delete, sender=Book)
+# @receiver(post_delete, sender=Book)
 def book_post_delete(sender, instance, **kwargs):
     categories_ids = [c.id for c in instance.categories.all()]
-    tasks.update_book_categories.apply_async(
+    res = tasks.update_book_categories.apply_async(
         args=(instance.id, categories_ids),
     )
+    return res.get()
 
 
 @receiver(post_save, sender=Category)

@@ -47,7 +47,6 @@ class BookSerializer(serializers.ModelSerializer):
         relation = self.get_relation(book)
         return relation['rating'] if relation else None
 
-    # TODO: tests!
     def get_in_wishlist(self, book):
         relation = self.get_relation(book)
         return relation['in_wishlist'] if relation else False

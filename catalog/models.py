@@ -1,9 +1,5 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.forms import ValidationError
-from django.db.models.aggregates import Avg, Count, Sum
-from django.db.models.expressions import F, Value
-from django.db.models.functions import Cast, Coalesce
 
 UserModel = get_user_model()
 
@@ -102,6 +98,25 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        categories_ids = [c.id for c in self.categories.all()]
+        from .tasks import update_book_aggregates, update_book_categories
+        res = update_book_aggregates.apply_async(
+            args=(self.id,),
+            link=update_book_categories.s(categories_ids)
+        )
+        return res.get()
+
+    def delete(self, *args, **kwargs):
+        categories_ids = [c.id for c in self.categories.all()]
+        super().delete(*args, **kwargs)
+        from .tasks import update_book_categories
+        res = update_book_categories.apply_async(
+            args=(self.id, categories_ids),
+        )
+        return res.get()
 
 
 class UserBookRelation(models.Model):
